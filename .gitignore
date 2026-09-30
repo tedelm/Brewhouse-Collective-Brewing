@@ -7,6 +7,8 @@
 *.dll
 *.so
 *.dylib
+*.wasm
+app/src/brewhouse
 
 # Test binary, built with `go test -c`
 *.test
@@ -27,6 +29,17 @@ go.work.sum
 # env file
 .env
 
+# SQLite databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.pre-restore
+
+# Release packaging
+app/src/dist/
+
 # Editor/IDE
 # .idea/
 # .vscode/
+misc/minus-1/*

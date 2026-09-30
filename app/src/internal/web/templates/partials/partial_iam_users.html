@@ -1,0 +1,98 @@
+<section class="panel" data-panel="iam-users">
+	<header class="panel__header">
+		<h1 class="panel__title" data-i18n="iam.users.title">Users</h1>
+		<p class="panel__lead" data-i18n="iam.users.lead">Create and edit users (user, superuser, admin). Optionally attach a brewery when creating a user.</p>
+	</header>
+	<div class="panel__toolbar">
+		<button type="button" class="btn" data-action="iam-users-refresh" data-i18n="common.refresh">Refresh</button>
+		<button type="button" class="btn" data-action="iam-users-export" data-i18n="common.export_csv">Export CSV</button>
+		<button type="button" class="btn" data-action="iam-users-import" data-i18n="common.import_csv">Import CSV</button>
+		<input type="file" id="iam-users-import-file" accept=".csv,text/csv" hidden>
+		<button type="button" class="btn btn--primary" data-action="iam-user-new" data-i18n="iam.users.new">New user</button>
+	</div>
+	<div class="panel__body" id="iam-users" data-i18n="common.loading">Loading…</div>
+	<dialog class="panel__dialog" id="iam-user-dialog">
+		<form method="dialog" class="panel__form" id="iam-user-form">
+			<h2 data-i18n="iam.users.dialog">User</h2>
+			<label><span data-i18n="common.username">Username</span> <input name="username" required autocomplete="username"></label>
+			<label><span data-i18n="common.password">Password</span>
+				<input name="password" type="password" required autocomplete="new-password" minlength="8">
+				<small class="panel__hint" data-i18n="common.password_hint">Min 8 characters, at least one special character</small>
+			</label>
+			<label><span data-i18n="common.email">Email</span> <input name="email" type="email" required autocomplete="email"></label>
+			<label><span data-i18n="iam.users.first_name">First name</span> <input name="first_name" autocomplete="given-name"></label>
+			<label><span data-i18n="iam.users.last_name">Last name</span> <input name="last_name" autocomplete="family-name"></label>
+			<label><span data-i18n="iam.users.address_line1">Address line 1</span> <input name="address_line1" autocomplete="address-line1"></label>
+			<label><span data-i18n="iam.users.address_line2">Address line 2</span> <input name="address_line2" autocomplete="address-line2"></label>
+			<label><span data-i18n="common.phone">Phone</span> <input name="phone" type="tel" autocomplete="tel"></label>
+			<label><span data-i18n="common.instagram">Instagram</span> <input name="instagram" type="url" placeholder="https://instagram.com/…" data-i18n-attr="placeholder:profile.instagram_placeholder" autocomplete="url"></label>
+			<label><span data-i18n="common.role">Role</span>
+				<select name="role" required>
+					<option value="user">user</option>
+					<option value="superuser">superuser</option>
+					<option value="admin">admin</option>
+				</select>
+			</label>
+			<label><span data-i18n="common.brewery">Brewery</span>
+				<select name="brewery_id">
+					<option value="" data-i18n="common.none">None</option>
+				</select>
+			</label>
+			<div class="panel__dialog-actions">
+				<button type="submit" class="btn btn--primary" value="save" data-i18n="common.save">Save</button>
+				<button type="submit" class="btn" value="cancel" formnovalidate data-i18n="common.cancel">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+	<dialog class="panel__dialog" id="iam-edit-user-dialog">
+		<form method="dialog" class="panel__form" id="iam-edit-user-form">
+			<h2 data-i18n="iam.users.edit">Edit user</h2>
+			<input type="hidden" name="user_id">
+			<label><span data-i18n="common.username">Username</span> <input name="username" required autocomplete="username"></label>
+			<label><span data-i18n="common.email">Email</span> <input name="email" type="email" required autocomplete="email"></label>
+			<label><span data-i18n="iam.users.first_name">First name</span> <input name="first_name" autocomplete="given-name"></label>
+			<label><span data-i18n="iam.users.last_name">Last name</span> <input name="last_name" autocomplete="family-name"></label>
+			<label><span data-i18n="iam.users.address_line1">Address line 1</span> <input name="address_line1" autocomplete="address-line1"></label>
+			<label><span data-i18n="iam.users.address_line2">Address line 2</span> <input name="address_line2" autocomplete="address-line2"></label>
+			<label><span data-i18n="common.phone">Phone</span> <input name="phone" type="tel" autocomplete="tel"></label>
+			<label><span data-i18n="common.instagram">Instagram</span> <input name="instagram" type="url" placeholder="https://instagram.com/…" data-i18n-attr="placeholder:profile.instagram_placeholder" autocomplete="url"></label>
+			<label><span data-i18n="common.role">Role</span>
+				<select name="role" required>
+					<option value="user">user</option>
+					<option value="superuser">superuser</option>
+					<option value="admin">admin</option>
+				</select>
+			</label>
+			<p class="panel__lead" id="iam-edit-role-hint" hidden data-i18n="iam.users.role_hint">You cannot change your own role away from admin.</p>
+			<div class="panel__dialog-actions">
+				<button type="submit" class="btn btn--primary" value="save" data-i18n="common.save">Save</button>
+				<button type="submit" class="btn" value="cancel" formnovalidate data-i18n="common.cancel">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+	<dialog class="panel__dialog" id="iam-reset-password-dialog">
+		<form method="dialog" class="panel__form" id="iam-reset-password-form">
+			<h2 data-i18n="iam.users.reset_password">Reset password</h2>
+			<input type="hidden" name="user_id">
+			<input type="hidden" name="email">
+			<input type="hidden" name="role">
+			<input type="hidden" name="first_name">
+			<input type="hidden" name="last_name">
+			<input type="hidden" name="address_line1">
+			<input type="hidden" name="address_line2">
+			<input type="hidden" name="phone">
+			<input type="hidden" name="instagram">
+			<label><span data-i18n="common.username">Username</span>
+				<input name="username" readonly>
+			</label>
+			<label><span data-i18n="iam.users.new_password">New password</span>
+				<input name="password" type="password" required autocomplete="new-password" minlength="8">
+				<small class="panel__hint" data-i18n="common.password_hint">Min 8 characters, at least one special character</small>
+			</label>
+			<div class="panel__dialog-actions">
+				<button type="submit" class="btn btn--primary" value="save" data-i18n="common.save">Save</button>
+				<button type="submit" class="btn" value="cancel" formnovalidate data-i18n="common.cancel">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+</section>

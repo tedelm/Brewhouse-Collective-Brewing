@@ -1,0 +1,299 @@
+package service
+
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+	"time"
+
+	"brewhouse/internal/database"
+)
+
+// ScheduleService books brewery equipment days and fermentation tanks.
+type ScheduleService struct {
+	db     *database.Holder
+	access *AccessService
+}
+
+// NewScheduleService creates a ScheduleService.
+func NewScheduleService(db *database.Holder, access *AccessService) *ScheduleService {
+	return &ScheduleService{db: db, access: access}
+}
+
+// BookRequest holds schedule booking parameters.
+type BookRequest struct {
+	RecipeID int64  `json:"recipe_id"`
+	Date     string `json:"date"` // YYYY-MM-DD brew day
+	TankID   int64  `json:"tank_id"`
+	TankDays int    `json:"tank_days"` // inclusive days tank is occupied from Date
+}
+
+// IsDateAvailable reports whether the main brewery equipment is free on date.
+func (s *ScheduleService) IsDateAvailable(date string) (bool, error) {
+	var n int
+	err := s.db.QueryRow(`SELECT COUNT(*) FROM brewery_bookings WHERE booked_date = ?`, date).Scan(&n)
+	if err != nil {
+		return false, err
+	}
+	return n == 0, nil
+}
+
+// IsTankAvailable reports whether a tank is free for [start, end] inclusive.
+func (s *ScheduleService) IsTankAvailable(tankID int64, start, end string, excludeRecipeID int64) (bool, error) {
+	var n int
+	err := s.db.QueryRow(
+		`SELECT COUNT(*) FROM tank_bookings
+		 WHERE tank_id = ?
+		   AND recipe_id != ?
+		   AND start_date <= ?
+		   AND end_date >= ?`,
+		tankID, excludeRecipeID, end, start,
+	).Scan(&n)
+	if err != nil {
+		return false, err
+	}
+	return n == 0, nil
+}
+
+// Book reserves brewery day + tank for a recipe and sets status to scheduled.
+func (s *ScheduleService) Book(actor Actor, req BookRequest) error {
+	if req.Date == "" || req.TankID == 0 || req.RecipeID == 0 {
+		return fmt.Errorf("recipe_id, date, and tank_id required")
+	}
+	if req.TankDays < 1 {
+		req.TankDays = 14
+	}
+
+	var breweryID int64
+	var status string
+	err := s.db.QueryRow(`SELECT brewery_id, status FROM recipes WHERE id = ?`, req.RecipeID).
+		Scan(&breweryID, &status)
+	if err == sql.ErrNoRows {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if err := s.access.RequireBreweryAccess(actor, breweryID); err != nil {
+		return err
+	}
+	if status != StatusCreated && status != StatusScheduled {
+		return ErrInvalidStatus
+	}
+
+	start := req.Date
+	endTime, err := time.Parse("2006-01-02", req.Date)
+	if err != nil {
+		return fmt.Errorf("invalid date: %w", err)
+	}
+	end := endTime.AddDate(0, 0, req.TankDays-1).Format("2006-01-02")
+
+	ok, err := s.IsDateAvailable(req.Date)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		// Allow rebooking same recipe's existing date
+		var existingRecipe int64
+		err := s.db.QueryRow(`SELECT recipe_id FROM brewery_bookings WHERE booked_date = ?`, req.Date).Scan(&existingRecipe)
+		if err != nil || existingRecipe != req.RecipeID {
+			return s.brewDayConflictError(req.Date)
+		}
+	}
+
+	ok, err = s.IsTankAvailable(req.TankID, start, end, req.RecipeID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return s.tankConflictError(req.TankID, start, end, req.RecipeID)
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	_, _ = tx.Exec(`DELETE FROM brewery_bookings WHERE recipe_id = ?`, req.RecipeID)
+	_, _ = tx.Exec(`DELETE FROM tank_bookings WHERE recipe_id = ?`, req.RecipeID)
+
+	_, err = tx.Exec(
+		`INSERT INTO brewery_bookings (recipe_id, booked_date) VALUES (?, ?)`,
+		req.RecipeID, req.Date,
+	)
+	if err != nil {
+		return fmt.Errorf("brewery booking: %w", err)
+	}
+	_, err = tx.Exec(
+		`INSERT INTO tank_bookings (recipe_id, tank_id, start_date, end_date) VALUES (?, ?, ?, ?)`,
+		req.RecipeID, req.TankID, start, end,
+	)
+	if err != nil {
+		return fmt.Errorf("tank booking: %w", err)
+	}
+	_, err = tx.Exec(
+		`UPDATE recipes SET booked_date = ?, tank_id = ?, status = ? WHERE id = ?`,
+		req.Date, req.TankID, StatusScheduled, req.RecipeID,
+	)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// brewDayConflictError builds ErrConflict naming who holds the brew day.
+func (s *ScheduleService) brewDayConflictError(date string) error {
+	var breweryName, recipeName string
+	err := s.db.QueryRow(
+		`SELECT br.name, r.name
+		 FROM brewery_bookings b
+		 INNER JOIN recipes r ON r.id = b.recipe_id
+		 INNER JOIN breweries br ON br.id = r.brewery_id
+		 WHERE b.booked_date = ?
+		 LIMIT 1`,
+		date,
+	).Scan(&breweryName, &recipeName)
+	if err != nil {
+		return ErrConflict
+	}
+	return fmt.Errorf("%w: brew day %s is already booked by %s / %s", ErrConflict, date, breweryName, recipeName)
+}
+
+// tankConflictError builds ErrConflict with tank, occupant, dates, and free alternatives.
+func (s *ScheduleService) tankConflictError(tankID int64, start, end string, excludeRecipeID int64) error {
+	var tankName, breweryName, recipeName, conflictStart, conflictEnd string
+	err := s.db.QueryRow(
+		`SELECT COALESCE(t.name, ''), br.name, r.name, tb.start_date, tb.end_date
+		 FROM tank_bookings tb
+		 INNER JOIN recipes r ON r.id = tb.recipe_id
+		 INNER JOIN breweries br ON br.id = r.brewery_id
+		 LEFT JOIN fermentation_tanks t ON t.id = tb.tank_id
+		 WHERE tb.tank_id = ? AND tb.recipe_id != ?
+		   AND tb.start_date <= ? AND tb.end_date >= ?
+		 ORDER BY tb.start_date
+		 LIMIT 1`,
+		tankID, excludeRecipeID, end, start,
+	).Scan(&tankName, &breweryName, &recipeName, &conflictStart, &conflictEnd)
+	if err != nil {
+		return ErrConflict
+	}
+	if tankName == "" {
+		tankName = fmt.Sprintf("#%d", tankID)
+	}
+
+	alts := s.availableFermenterNames(tankID, start, end, excludeRecipeID)
+	altMsg := "No other fermenters are free for that period."
+	if len(alts) > 0 {
+		altMsg = "Available fermenters: " + strings.Join(alts, ", ")
+	}
+
+	return fmt.Errorf(
+		"%w: tank %s is booked by %s / %s (%s–%s). %s",
+		ErrConflict, tankName, breweryName, recipeName, conflictStart, conflictEnd, altMsg,
+	)
+}
+
+// availableFermenterNames lists other active tanks free for [start, end].
+func (s *ScheduleService) availableFermenterNames(excludeTankID int64, start, end string, excludeRecipeID int64) []string {
+	rows, err := s.db.Query(
+		`SELECT id, name FROM fermentation_tanks WHERE active = 1 AND id != ? ORDER BY name, id`,
+		excludeTankID,
+	)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var id int64
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return names
+		}
+		ok, err := s.IsTankAvailable(id, start, end, excludeRecipeID)
+		if err != nil || !ok {
+			continue
+		}
+		names = append(names, name)
+	}
+	return names
+}
+
+// Unbook removes schedule bookings and returns a recipe to created status.
+func (s *ScheduleService) Unbook(actor Actor, recipeID int64) error {
+	var breweryID int64
+	var status string
+	err := s.db.QueryRow(`SELECT brewery_id, status FROM recipes WHERE id = ?`, recipeID).
+		Scan(&breweryID, &status)
+	if err == sql.ErrNoRows {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if err := s.access.RequireBreweryAccess(actor, breweryID); err != nil {
+		return err
+	}
+	if status != StatusScheduled {
+		return ErrInvalidStatus
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.Exec(`DELETE FROM brewery_bookings WHERE recipe_id = ?`, recipeID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM tank_bookings WHERE recipe_id = ?`, recipeID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(
+		`UPDATE recipes SET status = ?, booked_date = NULL, tank_id = NULL WHERE id = ?`,
+		StatusCreated, recipeID,
+	); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// ListBookings returns brewery bookings in a date range.
+func (s *ScheduleService) ListBookings(from, to string) ([]map[string]any, error) {
+	rows, err := s.db.Query(
+		`SELECT r.id, r.status, b.booked_date, COALESCE(tb.end_date, b.booked_date), br.name, r.name, COALESCE(t.name, '')
+		 FROM brewery_bookings b
+		 INNER JOIN recipes r ON r.id = b.recipe_id
+		 INNER JOIN breweries br ON br.id = r.brewery_id
+		 LEFT JOIN tank_bookings tb ON tb.recipe_id = b.recipe_id
+		 LEFT JOIN fermentation_tanks t ON t.id = tb.tank_id
+		 WHERE b.booked_date >= ? AND b.booked_date <= ?
+		 ORDER BY b.booked_date`,
+		from, to,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []map[string]any
+	for rows.Next() {
+		var recipeID int64
+		var status, date, endDate, breweryName, recipeName, tankName string
+		if err := rows.Scan(&recipeID, &status, &date, &endDate, &breweryName, &recipeName, &tankName); err != nil {
+			return nil, err
+		}
+		out = append(out, map[string]any{
+			"recipe_id":     recipeID,
+			"status":        status,
+			"date":          date,
+			"end_date":      endDate,
+			"brewery_name":  breweryName,
+			"name":          recipeName,
+			"tank_name":     tankName,
+		})
+	}
+	return out, rows.Err()
+}
