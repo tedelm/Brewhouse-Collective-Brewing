@@ -1,9 +1,21 @@
 (function (global) {
 	const STORAGE_KEY = "brewhouse_regional";
-	let catalogs = { en: {}, sv: {} };
+	const SUPPORTED_LANGUAGES = ["en", "sv", "nb", "da", "fi", "de", "es", "fr", "pl"];
+	const SUPPORTED_CURRENCIES = ["SEK", "EUR", "USD", "NOK", "DKK", "PLN"];
+	const catalogs = Object.fromEntries(SUPPORTED_LANGUAGES.map(function (code) {
+		return [code, {}];
+	}));
 	let language = "en";
 	let currency = "SEK";
 	let ready = false;
+
+	function isSupportedLanguage(lang) {
+		return SUPPORTED_LANGUAGES.indexOf(lang) >= 0;
+	}
+
+	function isSupportedCurrency(code) {
+		return SUPPORTED_CURRENCIES.indexOf(code) >= 0;
+	}
 
 	function loadCache() {
 		try {
@@ -12,10 +24,10 @@
 				return;
 			}
 			const o = JSON.parse(raw);
-			if (o.language === "en" || o.language === "sv") {
+			if (isSupportedLanguage(o.language)) {
 				language = o.language;
 			}
-			if (o.currency_code === "SEK" || o.currency_code === "EUR" || o.currency_code === "USD") {
+			if (isSupportedCurrency(o.currency_code)) {
 				currency = o.currency_code;
 			}
 		} catch (_) {
@@ -95,21 +107,19 @@
 	}
 
 	async function loadCatalogs() {
-		const [enRes, svRes] = await Promise.all([
-			fetch("/static/i18n/en.json"),
-			fetch("/static/i18n/sv.json"),
-		]);
-		if (enRes.ok) {
-			catalogs.en = await enRes.json();
-		}
-		if (svRes.ok) {
-			catalogs.sv = await svRes.json();
-		}
+		await Promise.all(
+			SUPPORTED_LANGUAGES.map(async function (code) {
+				const res = await fetch("/static/i18n/" + code + ".json");
+				if (res.ok) {
+					catalogs[code] = await res.json();
+				}
+			})
+		);
 		ready = true;
 	}
 
 	function setLanguage(lang) {
-		if (lang === "en" || lang === "sv") {
+		if (isSupportedLanguage(lang)) {
 			language = lang;
 			saveCache();
 			applyI18n(document);
@@ -117,7 +127,7 @@
 	}
 
 	function setCurrency(code) {
-		if (code === "SEK" || code === "EUR" || code === "USD") {
+		if (isSupportedCurrency(code)) {
 			currency = code;
 			saveCache();
 			applyI18n(document);
