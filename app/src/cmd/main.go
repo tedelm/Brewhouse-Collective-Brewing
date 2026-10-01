@@ -45,6 +45,16 @@ func main() {
 	recipes := service.NewRecipeService(db, access, inventory, settings)
 	schedule := service.NewScheduleService(db, access)
 	backup := service.NewBackupService(db, access, cfg.BackupDir)
+	demo := service.NewDemoService(db, breweries, inventory, settings, recipes, schedule)
+
+	if adminActor, ok := findAdminActor(users); ok {
+		if seeded, seedErr := demo.SeedDemoIfNeeded(adminActor); seedErr != nil {
+			logger.Println("Failed to seed demo data:", seedErr)
+			return
+		} else if seeded {
+			logger.Println("Demo brewery and batches seeded")
+		}
+	}
 
 	tokens := auth.NewTokenIssuer(cfg.JWTSecret, 10*time.Minute)
 
@@ -63,6 +73,7 @@ func main() {
 		Schedule:   schedule,
 		Settings:   settings,
 		Backup:     backup,
+		Demo:       demo,
 		Access:     access,
 		Tokens:     tokens,
 		Web:        webHandler,
@@ -84,4 +95,17 @@ func main() {
 		logger.Println("Failed to start server:", err)
 		return
 	}
+}
+
+func findAdminActor(users *service.UserService) (service.Actor, bool) {
+	list, err := users.List()
+	if err != nil {
+		return service.Actor{}, false
+	}
+	for _, u := range list {
+		if u.Role == service.RoleAdmin && u.Active {
+			return service.Actor{UserID: u.ID, Role: service.RoleAdmin}, true
+		}
+	}
+	return service.Actor{}, false
 }

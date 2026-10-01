@@ -47,6 +47,7 @@ func newTestEnv(t *testing.T) *testEnv {
 	recipes := service.NewRecipeService(db, access, inventory, settings)
 	schedule := service.NewScheduleService(db, access)
 	backup := service.NewBackupService(db, access, filepath.Join(t.TempDir(), "backups"))
+	demo := service.NewDemoService(db, breweries, inventory, settings, recipes, schedule)
 	tokens := auth.NewTokenIssuer("test-secret", time.Hour)
 	webHandler, err := web.New("test")
 	if err != nil {
@@ -60,6 +61,7 @@ func newTestEnv(t *testing.T) *testEnv {
 		Schedule:   schedule,
 		Settings:   settings,
 		Backup:     backup,
+		Demo:       demo,
 		Access:     access,
 		Tokens:     tokens,
 		Web:        webHandler,

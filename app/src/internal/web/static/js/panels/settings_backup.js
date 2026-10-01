@@ -42,6 +42,8 @@
 		const listEl = panel.querySelector("#settings-backup");
 		const errEl = panel.querySelector("#settings-backup-error");
 		const uploadInput = panel.querySelector("#settings-backup-upload");
+		const demoEl = panel.querySelector("#settings-demo");
+		const demoErrEl = panel.querySelector("#settings-demo-error");
 
 		function formatBytes(n) {
 			if (n < 1024) {
@@ -88,6 +90,32 @@
 			}
 			errEl.hidden = false;
 			errEl.textContent = msg;
+		}
+
+		function showDemoErr(msg) {
+			if (!demoErrEl) {
+				return;
+			}
+			if (!msg) {
+				demoErrEl.hidden = true;
+				demoErrEl.textContent = "";
+				return;
+			}
+			demoErrEl.hidden = false;
+			demoErrEl.textContent = msg;
+		}
+
+		async function refreshDemo() {
+			if (!demoEl) {
+				return;
+			}
+			showDemoErr("");
+			try {
+				const info = await api("/api/settings/demo");
+				demoEl.hidden = !(info && info.present);
+			} catch (e) {
+				demoEl.hidden = true;
+			}
 		}
 
 		async function refresh() {
@@ -200,6 +228,7 @@
 			const action = el.getAttribute("data-action");
 			if (action === "settings-backup-refresh") {
 				refresh();
+				refreshDemo();
 				return;
 			}
 			if (action === "settings-backup-now") {
@@ -209,6 +238,30 @@
 					refresh();
 				} catch (e) {
 					showErr(e.message);
+				}
+				return;
+			}
+			if (action === "settings-purge-demo") {
+				const ok = await appConfirm({
+					title: t("js.settings.purge_demo_title"),
+					message: t("js.settings.purge_demo_message"),
+				});
+				if (!ok) {
+					return;
+				}
+				showDemoErr("");
+				try {
+					await api("/api/settings/demo/purge", { method: "POST" });
+					await appInfo({
+						title: t("js.settings.purge_demo_done_title"),
+						message: t("js.settings.purge_demo_done_message"),
+					});
+					await refreshDemo();
+					if (typeof refreshBrewingNavCounts === "function") {
+						refreshBrewingNavCounts();
+					}
+				} catch (e) {
+					showDemoErr(e.message);
 				}
 				return;
 			}
@@ -265,6 +318,7 @@
 		}
 
 		refresh();
+		refreshDemo();
 	}
 
 	window.BrewhousePanels = window.BrewhousePanels || {};
