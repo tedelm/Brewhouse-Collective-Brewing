@@ -1357,6 +1357,26 @@ body {
 	font-size: 0.95rem;
 }
 
+.calc-co2-band--low {
+	color: #3a7ca5;
+}
+
+.calc-co2-band--stout {
+	color: #8b5e3c;
+}
+
+.calc-co2-band--lager {
+	color: #b8860b;
+}
+
+.calc-co2-band--wheat {
+	color: #c4785a;
+}
+
+.calc-co2-band--high {
+	color: #b33a3a;
+}
+
 .iam-brewery-card__logo {
 	width: 48px;
 	height: 48px;
