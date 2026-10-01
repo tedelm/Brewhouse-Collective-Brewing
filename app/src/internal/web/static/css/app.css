@@ -203,6 +203,42 @@ body {
 	cursor: wait;
 }
 
+.login__install {
+	display: block;
+	width: 100%;
+	margin: 0;
+	padding: 0.65rem 1.1rem;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-radius: 999px;
+	background: transparent;
+	color: rgba(255, 255, 255, 0.92);
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.25;
+	cursor: pointer;
+	animation: welcome-fade-up 0.45s ease both;
+}
+
+.login__install:hover,
+.login__install:focus-visible {
+	background: rgba(255, 255, 255, 0.12);
+	outline: none;
+}
+
+.login__install:focus-visible {
+	outline: 2px solid rgba(255, 255, 255, 0.85);
+	outline-offset: 2px;
+}
+
+.login__install[hidden] {
+	display: none;
+}
+
+.login-stage.is-authenticated .login__install {
+	display: none;
+}
+
 .login__error,
 .login__success {
 	margin: 0;
@@ -872,9 +908,22 @@ body {
 	animation: welcome-fade-up 0.55s ease 0.2s both;
 }
 
-.shell__welcome-cta {
-	display: inline-flex;
+.shell__welcome-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.65rem;
 	animation: welcome-fade-up 0.55s ease 0.26s both;
+}
+
+.shell__welcome-cta,
+.shell__welcome-install {
+	display: inline-flex;
+}
+
+.shell__welcome-install[hidden] {
+	display: none;
 }
 
 .shell__welcome-tip {

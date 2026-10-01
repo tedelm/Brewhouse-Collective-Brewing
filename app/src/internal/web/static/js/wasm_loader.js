@@ -44,6 +44,38 @@
 	let lastActivity = Date.now();
 	let sessionTimer = null;
 	let refreshInFlight = null;
+	let deferredInstallPrompt = null;
+
+	function isStandaloneDisplay() {
+		return (
+			window.matchMedia("(display-mode: standalone)").matches ||
+			window.navigator.standalone === true
+		);
+	}
+
+	function syncInstallButtons() {
+		const show = !!deferredInstallPrompt && !isStandaloneDisplay();
+		document.querySelectorAll("#login-install, #shell-welcome-install").forEach((btn) => {
+			btn.hidden = !show;
+		});
+	}
+
+	async function promptAppInstall() {
+		if (!deferredInstallPrompt) {
+			return;
+		}
+		const promptEvent = deferredInstallPrompt;
+		deferredInstallPrompt = null;
+		syncInstallButtons();
+		try {
+			await promptEvent.prompt();
+			if (promptEvent.userChoice) {
+				await promptEvent.userChoice;
+			}
+		} catch (err) {
+			console.warn("App install prompt failed:", err);
+		}
+	}
 
 	function t(key, vars) {
 		if (window.BH_I18N && typeof window.BH_I18N.t === "function") {
@@ -532,9 +564,14 @@
 			'<p class="shell__welcome-text" data-i18n="shell.welcome.text">' +
 			t("shell.welcome.text") +
 			"</p>" +
+			'<div class="shell__welcome-actions">' +
 			'<a class="btn btn--primary shell__welcome-cta" href="/app/guide" hx-get="/app/guide" hx-target="#main-content" hx-swap="innerHTML" data-i18n="shell.welcome.cta">' +
 			t("shell.welcome.cta") +
 			"</a>" +
+			'<button type="button" class="btn shell__welcome-install" id="shell-welcome-install" hidden data-i18n="shell.welcome.install">' +
+			t("shell.welcome.install") +
+			"</button>" +
+			"</div>" +
 			tip +
 			"</section>"
 		);
@@ -549,6 +586,7 @@
 		if (window.htmx) {
 			window.htmx.process(main);
 		}
+		syncInstallButtons();
 		history.replaceState(null, "", "/");
 		setProfileMenuOpen(false);
 		setSheetOpen(false);
@@ -953,6 +991,30 @@
 			.catch((err) => {
 				console.warn("Service worker registration failed:", err);
 			});
+	}
+
+	window.addEventListener("beforeinstallprompt", (event) => {
+		event.preventDefault();
+		deferredInstallPrompt = event;
+		syncInstallButtons();
+	});
+
+	window.addEventListener("appinstalled", () => {
+		deferredInstallPrompt = null;
+		syncInstallButtons();
+	});
+
+	document.addEventListener("click", (event) => {
+		const btn = event.target.closest("#login-install, #shell-welcome-install");
+		if (!btn) {
+			return;
+		}
+		event.preventDefault();
+		promptAppInstall();
+	});
+
+	if (isStandaloneDisplay()) {
+		syncInstallButtons();
 	}
 
 	WebAssembly.instantiateStreaming(fetch("/static/wasm/app.wasm"), go.importObject)
