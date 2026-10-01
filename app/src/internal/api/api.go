@@ -23,6 +23,7 @@ type Handler struct {
 	schedule   *service.ScheduleService
 	settings   *service.SettingsService
 	backup     *service.BackupService
+	access     *service.AccessService
 	tokens     *auth.TokenIssuer
 	web        *web.Handler
 	appVersion string
@@ -38,6 +39,7 @@ type Deps struct {
 	Schedule   *service.ScheduleService
 	Settings   *service.SettingsService
 	Backup     *service.BackupService
+	Access     *service.AccessService
 	Tokens     *auth.TokenIssuer
 	Web        *web.Handler
 	AppVersion string
@@ -54,6 +56,7 @@ func New(d Deps) *Handler {
 		schedule:   d.Schedule,
 		settings:   d.Settings,
 		backup:     d.Backup,
+		access:     d.Access,
 		tokens:     d.Tokens,
 		web:        d.Web,
 		appVersion: d.AppVersion,

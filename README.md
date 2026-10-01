@@ -7,9 +7,18 @@ Collective brewing is a brewery managment system for breweries that share invent
 
 ## Features
 
-- Shared inventory across breweries (malt, hops, yeast, misc, equipment) with a base **cost price** per item
-- **Suppliers** (admin → Settings): each supplier has an `adjust_percent`; **effective cost** = `cost_price × (1 + adjust_percent / 100)`. Shown in inventory and applied when recipes or orders snapshot cost (historical snapshots are not rewritten when the % changes)
-- First-run seed catalogs under [`app/src/internal/database/seed/`](app/src/internal/database/seed/) use English product names and link items to the default supplier **mr malt**. Seeding only fills **empty** categories—existing DBs with a catalog already loaded are not re-seeded
+- **Batch pipeline:** recipe → schedule → brewday → hygiene → delivery (in-app **Brewery 101** guide has the full walkthrough)
+- **Shared inventory** across breweries (malt, hops, yeast, misc, equipment) with base **cost price** per item
+- **Suppliers** (admin → Settings): each supplier has an `adjust_percent`; **effective cost** = `cost_price × (1 + adjust_percent / 100)`. Applied when recipes or orders snapshot cost
+- **Orders:** planning wishlist (including recipe shortfalls), ordered, complete to receive stock
+- **Schedule:** brew-day booking plus fermentation tank occupancy (week view + Gantt)
+- **Calculators:** ABV, tax, extract, dilution, yeast pitch (client-side)
+- **Economy:** Swedish alcohol tax config (elevated admin); monthly delivery reports for admin and brewery managers
+- **IAM:** users, breweries, memberships; admins sign in as superuser and use **Admin mode** to elevate
+- **Settings:** brand, tanks, multipliers, suppliers, beer net price, regional/i18n, hygiene routines, backups
+- **PWA** installable over HTTPS/localhost; service worker caches the shell and static assets (`/api/` stays online-only)
+- **i18n:** nine locales with key parity checks in tests
+- First-run seed catalogs under [`app/src/internal/database/seed/`](app/src/internal/database/seed/) (English names, default supplier **mr malt**); only fills empty categories
 
 ## Screenshots
 
@@ -43,7 +52,7 @@ Collective brewing is a brewery managment system for breweries that share invent
 
 ## Tech
 
-This app runs on HTMX + Go WASM GUI, Go HTTP API, SQLite
+HTMX shell + JavaScript panels, a small Go WASM module for version stale-reload, Go HTTP API, SQLite
 
 ## Prerequisites
 
@@ -95,7 +104,7 @@ Set a strong `JWT_SECRET` in any real deployment (including Azure). Passwords ar
 
 ### Install as app (PWA)
 
-Brewhouse is installable from Chrome/Edge when served over **HTTPS** or **localhost**: use the browser’s Install / “Add to Home Screen” option after the service worker registers. Icons and the web app manifest live under `/static/`. Bumping `VERSION` and rebuilding updates the service worker cache name so clients pick up a new shell.
+Brewhouse is installable from Chrome/Edge when served over **HTTPS** or **localhost**: use the browser’s Install / “Add to Home Screen” option after the service worker registers. Icons and the web app manifest live under `/static/`. Bumping `VERSION` and rebuilding updates the service worker cache name so clients pick up a new shell. The service worker precaches the shell, JS panels, and calculators assets for offline reading of cached UI; **`/api/` always requires network** (no offline brewing CRUD).
 
 ## Deploy on STRATO Linux VPS
 

@@ -37,6 +37,12 @@ type VersionResponse struct {
 	Version string `json:"version"`
 }
 
+// MeResponse is returned by GET /api/me.
+type MeResponse struct {
+	service.User
+	CanViewEconomy bool `json:"can_view_economy"`
+}
+
 // CreateUserRequest is the body for user create.
 type CreateUserRequest struct {
 	Username     string `json:"username"`

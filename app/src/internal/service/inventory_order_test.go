@@ -295,6 +295,14 @@ func TestCountOpenOrders(t *testing.T) {
 	if n != 2 {
 		t.Fatalf("expected open count 2 (planning #%d + ordered #%d), got %d", planning.ID, ordered.ID, n)
 	}
+
+	shortN, err := inventory.CountShortfallLines()
+	if err != nil {
+		t.Fatalf("count shortfalls: %v", err)
+	}
+	if shortN != 0 {
+		t.Fatalf("expected 0 shortfall lines without recipe_id, got %d", shortN)
+	}
 }
 
 func TestOrderLineCostSnapshotAndTotal(t *testing.T) {

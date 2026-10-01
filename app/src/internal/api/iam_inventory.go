@@ -728,7 +728,12 @@ func (h *Handler) inventoryOrders(w http.ResponseWriter, r *http.Request, actor 
 			h.writeErr(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]int{"count": n})
+		shortfalls, err := h.inventory.CountShortfallLines()
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]int{"count": n, "shortfall_lines": shortfalls})
 		return
 	}
 

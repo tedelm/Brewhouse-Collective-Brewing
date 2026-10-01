@@ -77,8 +77,13 @@ func (h *Handler) Recipes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		brewdayN, err := h.recipes.CountByStatuses(
-			service.StatusScheduled, service.StatusBrewday, service.StatusHygieneDone,
+			service.StatusScheduled, service.StatusBrewday,
 		)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		hygieneN, err := h.recipes.CountByStatuses(service.StatusBrewday)
 		if err != nil {
 			h.writeErr(w, err)
 			return
@@ -94,8 +99,33 @@ func (h *Handler) Recipes(w http.ResponseWriter, r *http.Request) {
 			"recipes":  recipesN,
 			"schedule": recipesN,
 			"brewday":  brewdayN,
+			"hygiene":  hygieneN,
 			"delivery": deliveryN,
 		})
+		return
+	}
+
+	if len(parts) == 1 && parts[0] == "delivered" {
+		if r.Method != http.MethodGet {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		month := strings.TrimSpace(r.URL.Query().Get("month"))
+		var breweryID int64
+		if raw := strings.TrimSpace(r.URL.Query().Get("brewery_id")); raw != "" {
+			id, err := strconv.ParseInt(raw, 10, 64)
+			if err != nil {
+				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid brewery_id"})
+				return
+			}
+			breweryID = id
+		}
+		list, err := h.recipes.ListDeliveredByMonth(actor, breweryID, month)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, list)
 		return
 	}
 
@@ -247,6 +277,17 @@ func (h *Handler) Recipes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, recipe)
+	case "brew-again":
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		result, err := h.recipes.BrewAgain(actor, id)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, result)
 	case "active":
 		if r.Method != http.MethodPost {
 			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})

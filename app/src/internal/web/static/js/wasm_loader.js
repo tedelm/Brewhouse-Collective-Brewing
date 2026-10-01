@@ -225,12 +225,50 @@
 				}
 			}
 		});
+		applyEconomyNavVisibility();
+	}
+
+	let canViewEconomyFlag = false;
+
+	function canViewEconomy() {
+		return !!canViewEconomyFlag || currentRole() === "admin";
+	}
+
+	function applyEconomyNavVisibility() {
+		const show = canViewEconomy();
+		document.querySelectorAll("[data-nav-economy-section]").forEach((el) => {
+			el.classList.toggle("is-role-hidden", !show);
+			if (!show) {
+				el.classList.remove("is-expanded");
+				const header = el.querySelector("[aria-expanded]");
+				if (header) {
+					header.setAttribute("aria-expanded", "false");
+				}
+			}
+		});
+		document.querySelectorAll("[data-nav-economy-deliveries]").forEach((el) => {
+			el.classList.toggle("is-role-hidden", !show);
+		});
+	}
+
+	async function refreshEconomyAccess() {
+		try {
+			const res = await fetch("/api/me", { headers: authHeaders() });
+			const data = await res.json().catch(() => ({}));
+			if (res.ok) {
+				canViewEconomyFlag = !!data.can_view_economy;
+			}
+		} catch {
+			canViewEconomyFlag = false;
+		}
+		applyEconomyNavVisibility();
 	}
 
 	window.BrewhouseAuth = {
 		role: currentRole,
 		token: () => sessionStorage.getItem("brewhouse_token") || "",
 		canElevate,
+		canViewEconomy,
 		can: (roles) => {
 			const r = currentRole();
 			if (!r) {
@@ -243,6 +281,7 @@
 		applyWelcomeLogoBg,
 		markActivity,
 		refreshSession,
+		refreshEconomyAccess,
 		logout: () => logout(),
 	};
 
@@ -411,6 +450,7 @@
 		setSheetOpen(false);
 		setProfileMenuOpen(false);
 		applyNavVisibility(currentRole());
+		refreshEconomyAccess();
 		syncAdminToggle();
 		loadWelcomeLogoBg();
 		loadRegionalSettings();
@@ -541,7 +581,16 @@
 		const main = document.getElementById("main-content");
 		const panel = main ? main.querySelector("[data-panel]") : null;
 		const kind = panel ? panel.getAttribute("data-panel") : "";
-		if (kind === "iam" || (kind && kind.startsWith("iam-")) || (kind && kind.startsWith("settings"))) {
+		if (
+			kind === "economy" ||
+			kind === "iam" ||
+			(kind && kind.startsWith("iam-")) ||
+			(kind && kind.startsWith("settings"))
+		) {
+			showHome();
+			return;
+		}
+		if (kind === "economy-deliveries" && !canViewEconomy()) {
 			showHome();
 		}
 	}

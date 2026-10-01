@@ -37,7 +37,7 @@
 
 	<section class="guide-section" data-require-elevate>
 		<h2 class="guide-section__title" data-i18n="guide.admin_title">Admin mode</h2>
-		<p class="guide-section__lead" data-i18n="guide.admin_lead">Admin accounts sign in as superuser. Economy, IAM, and Settings stay hidden until you elevate.</p>
+		<p class="guide-section__lead" data-i18n="guide.admin_lead">Admin accounts sign in as superuser. Tax rates, IAM Users, and Settings stay hidden until you elevate. Monthly deliveries also appear for brewery managers without elevate.</p>
 		<ul class="guide-list">
 			<li><strong data-i18n="guide.admin.where">Where</strong> — <span data-i18n="guide.admin.where_text">Open the profile menu (avatar, top right) and use the Admin mode toggle. Only admin accounts see it.</span></li>
 			<li><strong data-i18n="guide.admin.on">On</strong> — <span data-i18n="guide.admin.on_text">Your session becomes admin; Economy, IAM, and Settings appear in the navigation.</span></li>
@@ -52,17 +52,17 @@
 		<h3 class="guide-section__subtitle" data-i18n="guide.account_roles">Account roles</h3>
 		<ul class="guide-list">
 			<li><strong>user</strong> — <span data-i18n="guide.account.user">Brewing, Inventory (view), and Hygiene for breweries you belong to: recipes, schedule, brewday, delivery, and wishlist shortfalls from recipes.</span></li>
-			<li><strong>superuser</strong> — <span data-i18n="guide.account.superuser">Same as user, plus create and edit shared inventory and purchase orders. Economy, IAM, and Settings stay hidden.</span></li>
-			<li><strong>admin</strong> — <span data-i18n="guide.account.admin">Signs in as superuser. With Admin mode on, full access including Economy, IAM, and Settings.</span></li>
+			<li><strong>superuser</strong> — <span data-i18n="guide.account.superuser">Same as user, plus create and edit shared inventory and purchase orders. Tax settings and IAM Users stay behind Admin mode; monthly delivery reports are available when you manage a brewery.</span></li>
+			<li><strong>admin</strong> — <span data-i18n="guide.account.admin">Signs in as superuser. With Admin mode on, full access including tax settings, IAM Users, and Settings.</span></li>
 		</ul>
 
 		<h3 class="guide-section__subtitle" data-i18n="guide.membership_roles">Brewery membership roles</h3>
 		<ul class="guide-list">
 			<li><strong>user</strong> — <span data-i18n="guide.membership.user">Member of that brewery; can work on its batches.</span></li>
-			<li><strong>superuser</strong> — <span data-i18n="guide.membership.superuser">Member plus inventory management for the shared stock.</span></li>
-			<li><strong>brewery_admin</strong> — <span data-i18n="guide.membership.brewery_admin">Manages that brewery (contacts, logo, and members). Not a global admin, and not set as the account role in Users — only on membership.</span></li>
+			<li><strong>superuser</strong> — <span data-i18n="guide.membership.superuser">Member plus inventory management for the shared stock; can view monthly delivery reports for that brewery.</span></li>
+			<li><strong>brewery_admin</strong> — <span data-i18n="guide.membership.brewery_admin">Manages that brewery (contacts, logo, and members) and can view its delivery reports. Not a global admin, and not set as the account role in Users — only on membership.</span></li>
 		</ul>
-		<p class="guide-section__lead" data-i18n="guide.roles_footer">Economy and Settings always require elevated admin (see Admin mode above). IAM → Breweries is also available to brewery managers for their brewery; Users stays admin-only.</p>
+		<p class="guide-section__lead" data-i18n="guide.roles_footer">Tax rates and Settings require elevated admin (see Admin mode). Monthly deliveries are visible to elevated admin and to brewery managers (membership superuser / brewery_admin). IAM → Breweries is available to brewery managers for their brewery; Users stays admin-only.</p>
 	</section>
 
 	<section class="guide-section">
