@@ -111,4 +111,41 @@
 			· <span data-i18n="tools.pitch.temp">Temp:</span> <strong id="calc-pitch-temp">—</strong>
 		</p>
 	</div>
+
+	<div class="calc-block">
+		<h2 class="calc-block__title" data-i18n="tools.co2.title">CO₂ carbonation</h2>
+		<p class="panel__lead" data-i18n="tools.co2.lead">Force-carbonation volumes from keg temperature and regulator pressure, or required pressure for a target volume. Style bands follow common keg charts.</p>
+		<form class="panel__form panel__form--inline" id="calc-co2-form">
+			<label><span data-i18n="tools.co2.temp">Temp (°C)</span>
+				<input name="temp" type="number" step="0.1" min="-5" max="40" value="4" required>
+			</label>
+			<label><span data-i18n="tools.co2.pressure">Pressure</span>
+				<input name="pressure" type="number" step="0.01" min="0" max="50" value="12" required>
+			</label>
+			<label><span data-i18n="tools.co2.unit">Unit</span>
+				<select name="unit">
+					<option value="psi" selected data-i18n="tools.co2.psi">PSI</option>
+					<option value="bar" data-i18n="tools.co2.bar">BAR</option>
+				</select>
+			</label>
+		</form>
+		<p class="calc-block__result">
+			<span data-i18n="tools.co2.volumes">Volumes:</span> <strong id="calc-co2-volumes">—</strong>
+			· <span data-i18n="tools.co2.style">Style:</span> <strong id="calc-co2-style" class="calc-co2-band">—</strong>
+		</p>
+		<p class="panel__lead" data-i18n="tools.co2.target_lead">Pressure needed for a target carbonation level at the same temperature.</p>
+		<form class="panel__form panel__form--inline" id="calc-co2-target-form">
+			<label><span data-i18n="tools.co2.temp">Temp (°C)</span>
+				<input name="temp" type="number" step="0.1" min="-5" max="40" value="4" required>
+			</label>
+			<label><span data-i18n="tools.co2.target_volumes">Target volumes</span>
+				<input name="volumes" type="number" step="0.01" min="0.5" max="5" value="2.4" required>
+			</label>
+		</form>
+		<p class="calc-block__result">
+			<span data-i18n="tools.co2.need_psi">Need:</span> <strong id="calc-co2-need-psi">—</strong>
+			· <strong id="calc-co2-need-bar">—</strong>
+			· <span data-i18n="tools.co2.style">Style:</span> <strong id="calc-co2-target-style" class="calc-co2-band">—</strong>
+		</p>
+	</div>
 </section>

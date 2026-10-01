@@ -3065,12 +3065,115 @@
 			tempEl.textContent = tempC;
 		}
 
+		const PSI_PER_BAR = 14.5038;
+		const CO2_BAND_CLASSES = [
+			"calc-co2-band--low",
+			"calc-co2-band--stout",
+			"calc-co2-band--lager",
+			"calc-co2-band--wheat",
+			"calc-co2-band--high",
+		];
+
+		function co2Factor(tempC) {
+			const tfOffset = tempC * 1.8;
+			return 0.01821 + 0.090115 * Math.exp(-tfOffset / 43.349);
+		}
+
+		function co2Volumes(tempC, psi) {
+			const tfOffset = tempC * 1.8;
+			return (psi + 14.695) * co2Factor(tempC) - 0.003342 * tfOffset;
+		}
+
+		function co2Psi(tempC, volumes) {
+			const tfOffset = tempC * 1.8;
+			const factor = co2Factor(tempC);
+			if (factor <= 0) {
+				return NaN;
+			}
+			return (volumes + 0.003342 * tfOffset) / factor - 14.695;
+		}
+
+		function co2Band(volumes) {
+			if (volumes < 1.5) {
+				return { key: "tools.co2.band_low", cls: "calc-co2-band--low" };
+			}
+			if (volumes < 2.2) {
+				return { key: "tools.co2.band_stout", cls: "calc-co2-band--stout" };
+			}
+			if (volumes < 2.6) {
+				return { key: "tools.co2.band_lager", cls: "calc-co2-band--lager" };
+			}
+			if (volumes <= 4.0) {
+				return { key: "tools.co2.band_wheat", cls: "calc-co2-band--wheat" };
+			}
+			return { key: "tools.co2.band_high", cls: "calc-co2-band--high" };
+		}
+
+		function setCo2Band(el, volumes) {
+			if (!el) {
+				return;
+			}
+			CO2_BAND_CLASSES.forEach((c) => el.classList.remove(c));
+			if (Number.isNaN(volumes)) {
+				el.textContent = "—";
+				return;
+			}
+			const band = co2Band(volumes);
+			el.textContent = t(band.key);
+			el.classList.add(band.cls);
+		}
+
+		function updateCO2() {
+			const form = panel.querySelector("#calc-co2-form");
+			const volEl = panel.querySelector("#calc-co2-volumes");
+			const styleEl = panel.querySelector("#calc-co2-style");
+			const temp = num(form, "temp");
+			const pressure = num(form, "pressure");
+			const unit = form.querySelector('[name="unit"]').value;
+			if (Number.isNaN(temp) || Number.isNaN(pressure) || pressure < 0) {
+				volEl.textContent = "—";
+				setCo2Band(styleEl, NaN);
+				return;
+			}
+			const psi = unit === "bar" ? pressure * PSI_PER_BAR : pressure;
+			const volumes = co2Volumes(temp, psi);
+			volEl.textContent = volumes.toFixed(2);
+			setCo2Band(styleEl, volumes);
+		}
+
+		function updateCO2Target() {
+			const form = panel.querySelector("#calc-co2-target-form");
+			const psiEl = panel.querySelector("#calc-co2-need-psi");
+			const barEl = panel.querySelector("#calc-co2-need-bar");
+			const styleEl = panel.querySelector("#calc-co2-target-style");
+			const temp = num(form, "temp");
+			const volumes = num(form, "volumes");
+			if (Number.isNaN(temp) || Number.isNaN(volumes) || volumes <= 0) {
+				psiEl.textContent = "—";
+				barEl.textContent = "—";
+				setCo2Band(styleEl, NaN);
+				return;
+			}
+			const psi = co2Psi(temp, volumes);
+			if (Number.isNaN(psi) || psi < 0) {
+				psiEl.textContent = "—";
+				barEl.textContent = "—";
+				setCo2Band(styleEl, volumes);
+				return;
+			}
+			psiEl.textContent = psi.toFixed(2) + " PSI";
+			barEl.textContent = (psi / PSI_PER_BAR).toFixed(2) + " BAR";
+			setCo2Band(styleEl, volumes);
+		}
+
 		function refreshAll() {
 			updateABV();
 			updateTax();
 			updateExtract();
 			updateDilute();
 			updatePitch();
+			updateCO2();
+			updateCO2Target();
 		}
 
 		panel.addEventListener("input", (ev) => {
@@ -3093,6 +3196,12 @@
 			if (el.closest("#calc-pitch-form")) {
 				updatePitch();
 			}
+			if (el.closest("#calc-co2-form")) {
+				updateCO2();
+			}
+			if (el.closest("#calc-co2-target-form")) {
+				updateCO2Target();
+			}
 		});
 		panel.addEventListener("change", (ev) => {
 			const el = ev.target;
@@ -3104,6 +3213,12 @@
 			}
 			if (el.closest("#calc-pitch-form")) {
 				updatePitch();
+			}
+			if (el.closest("#calc-co2-form")) {
+				updateCO2();
+			}
+			if (el.closest("#calc-co2-target-form")) {
+				updateCO2Target();
 			}
 		});
 
