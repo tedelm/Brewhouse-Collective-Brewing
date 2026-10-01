@@ -5,10 +5,12 @@ const CACHE_NAME = "brewhouse-" + SW_VERSION;
 const PRECACHE = [
 	"/",
 	"/static/css/app.css",
+	"/static/js/htmx.min.js",
 	"/static/js/app.js",
 	"/static/js/wasm_loader.js",
 	"/static/js/wasm_exec.js",
 	"/static/wasm/app.wasm",
+	"/static/fonts/material-symbols-outlined.woff2",
 	"/static/manifest.webmanifest",
 	"/static/images/icon-192.png",
 	"/static/images/icon-512.png",
