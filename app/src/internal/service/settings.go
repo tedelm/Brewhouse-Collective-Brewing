@@ -20,6 +20,15 @@ type SettingsService struct {
 	access *AccessService
 }
 
+var supportedRegionalLanguages = map[string]struct{}{
+	"en": {}, "sv": {}, "nb": {}, "da": {}, "fi": {}, "de": {},
+	"es": {}, "fr": {}, "pl": {},
+}
+
+var supportedRegionalCurrencies = map[string]struct{}{
+	"SEK": {}, "EUR": {}, "USD": {}, "NOK": {}, "DKK": {}, "PLN": {},
+}
+
 // NewSettingsService creates a SettingsService.
 func NewSettingsService(db *database.Holder, access *AccessService) *SettingsService {
 	return &SettingsService{db: db, access: access}
@@ -337,15 +346,11 @@ func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, langua
 	}
 	currencyCode = strings.ToUpper(strings.TrimSpace(currencyCode))
 	language = strings.ToLower(strings.TrimSpace(language))
-	switch currencyCode {
-	case "SEK", "EUR", "USD":
-	default:
-		return nil, fmt.Errorf("currency_code must be SEK, EUR, or USD")
+	if _, ok := supportedRegionalCurrencies[currencyCode]; !ok {
+		return nil, fmt.Errorf("currency_code must be SEK, EUR, USD, NOK, DKK, or PLN")
 	}
-	switch language {
-	case "en", "sv":
-	default:
-		return nil, fmt.Errorf("language must be en or sv")
+	if _, ok := supportedRegionalLanguages[language]; !ok {
+		return nil, fmt.Errorf("language must be one of en, sv, nb, da, fi, de, es, fr, pl")
 	}
 	_, err := s.db.Exec(
 		`INSERT INTO regional_config (id, currency_code, language) VALUES (1, ?, ?)
