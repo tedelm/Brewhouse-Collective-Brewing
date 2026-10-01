@@ -13,30 +13,32 @@ Brewhouse a single Go application under `app/src` (module path **`brewhouse`**).
 ## Application features
 - IAM
   - CRUD operations; Users are created in the app and each users is grouped into sub-brewerys and can be either user, superuser or admin.
-    - user: Member of a sub-brewery; can create recipies (affects Inventory amounts) + Add to order wishlist + Delivery
-    - superuser: Member of a sub-brewery; Same as "user" + Economy + can manage Inventory
-    - admin: Can administrate everyting in the app
-    - brewery_admin: Can administrate the sub-brewery
+    - user: Member of a sub-brewery; can create recipes (affects Inventory amounts) + Add to order wishlist + Delivery
+    - superuser (account): Same as user + can manage Inventory when membership allows; delivery reports when membership is superuser/brewery_admin
+    - admin: Can administrate everything (elevate for tax/Settings/IAM Users)
+    - brewery_admin: Can administrate the sub-brewery + view delivery reports for that brewery
 - Inventory
-  - CRUD operations: Malt, Hops, Yeast, Misc
+  - CRUD operations: Malt, Hops, Yeast, Misc, Equipment
     - Orders: Create wishlist orders were the users can add items
     - Prices: Cost-price
 - Hygine
-  - CRUD operations: Create routines that must be followed each brewday
+  - CRUD operations: Create routines that must be followed each brewday (Hygiene page is primary; brewday has a shortcut)
 - Economy
-  - CRUD operations: Tax amounts for different ABV beer
+  - Tax config: elevated admin only
+  - Monthly delivery reports: elevated admin (all) or brewery managers (scoped)
 - Brewing 
-  - CRUD operations: Recipies, Delivery
-  - Fermentation tanks schedule
+  - CRUD operations: Recipes, Delivery
+  - Fermentation tanks schedule + week/Gantt visualization
   - Brewery schedule
   - Calculate net-price
+  - Brew again from a delivered batch
 - Delivery
-  - CRUD operations: Calculates each batch/recipie (OG,FG,Volume) brewed beer cost/net price based on configuration set in and alcohol tax (sweden)
+  - CRUD operations: Calculates each batch/recipe (OG,FG,Volume) brewed beer cost/net price based on configuration and alcohol tax (Sweden)
 - Settings
   - CRUD operations: 
     - Alcohol tax levels (Sweden)
     - Fermentation tanks
-    - Recipie/Batch price multipliers for net-price
+    - Recipe/Batch price multipliers for net-price
 
 ## Application flow
 1. Create user
@@ -68,10 +70,11 @@ Brewhouse a single Go application under `app/src` (module path **`brewhouse`**).
 - Load config from the environment via `internal/config`.
 - Prefer **short, standard library package names** in imports; use a **local alias** only to avoid collisions (e.g. `jwtdecoder "brewhouse/internal/jwt"`).
 
-## GUI (HTMX + WASM)
+## GUI (HTMX + JS panels + WASM version guard)
 
 - Use **server-rendered HTML + HTMX** for navigation and partial updates. Keep handlers thin; HTML fragments live in the web layer (`internal/web`), not in `internal/service`.
-- Use **Go-compiled WASM** for richer client behavior that belongs in Go.
+- Client panel logic lives in classic scripts under `static/js/core` and `static/js/panels` (`BrewhouseCore` / `BrewhousePanels`).
+- Use **Go-compiled WASM** mainly for app/build **version stale-reload** (not the primary GUI).
 - **WASM versioning (required):** the server exposes an app/build version (from config or build metadata). The WASM loader (or a small JS/HTMX hook) compares the locally loaded version against the server version on relevant navigation and/or periodically. When the server version is newer, **reload the WASM (or the full page)** so long-lived tabs never stay on a stale binary. Do **not** rely on browser cache alone.
 - HTML layout: sidebar (Main navigation, minimizable drawer) + topbar (with profile icon on right), should be optimized for mobile devices (small screen)
 - Use web modal for pop ups, never use the native web browser popup confirmation dialog.

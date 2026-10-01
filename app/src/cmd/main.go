@@ -63,6 +63,7 @@ func main() {
 		Schedule:   schedule,
 		Settings:   settings,
 		Backup:     backup,
+		Access:     access,
 		Tokens:     tokens,
 		Web:        webHandler,
 		AppVersion: cfg.AppVersion,

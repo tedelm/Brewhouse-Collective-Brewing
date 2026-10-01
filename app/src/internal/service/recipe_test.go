@@ -851,13 +851,20 @@ func TestCountByStatuses_NavCounts(t *testing.T) {
 		t.Fatalf("recipes/schedule count: want 1, got %d", recipesN)
 	}
 	brewdayN, err := recipes.CountByStatuses(
-		service.StatusScheduled, service.StatusBrewday, service.StatusHygieneDone,
+		service.StatusScheduled, service.StatusBrewday,
 	)
 	if err != nil {
 		t.Fatalf("count brewday: %v", err)
 	}
-	if brewdayN != 3 {
-		t.Fatalf("brewday count: want 3, got %d", brewdayN)
+	if brewdayN != 2 {
+		t.Fatalf("brewday count: want 2, got %d", brewdayN)
+	}
+	hygieneN, err := recipes.CountByStatuses(service.StatusBrewday)
+	if err != nil {
+		t.Fatalf("count hygiene: %v", err)
+	}
+	if hygieneN != 1 {
+		t.Fatalf("hygiene count: want 1, got %d", hygieneN)
 	}
 	deliveryN, err := recipes.CountByStatuses(
 		service.StatusHygieneDone, service.StatusReadyForDelivery,

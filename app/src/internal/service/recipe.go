@@ -69,6 +69,69 @@ func (s *RecipeService) List(actor Actor, breweryID int64, includeHidden bool) (
 	return out, nil
 }
 
+// ListDeliveredByMonth returns delivered batches for YYYY-MM, scoped by economy view access.
+func (s *RecipeService) ListDeliveredByMonth(actor Actor, breweryID int64, month string) ([]Recipe, error) {
+	if err := s.access.RequireEconomyView(actor); err != nil {
+		return nil, err
+	}
+	if len(month) != 7 || month[4] != '-' {
+		return nil, fmt.Errorf("month must be YYYY-MM")
+	}
+	start := month + "-01"
+	endTime, err := time.Parse("2006-01-02", start)
+	if err != nil {
+		return nil, fmt.Errorf("invalid month: %w", err)
+	}
+	endExclusive := endTime.AddDate(0, 1, 0).Format("2006-01-02")
+
+	var out []Recipe
+	if breweryID > 0 {
+		if actor.IsAdmin() {
+			// ok
+		} else {
+			role, mErr := s.access.MembershipRole(actor.UserID, breweryID)
+			if mErr != nil {
+				return nil, mErr
+			}
+			if role != RoleSuperuser && role != RoleBreweryAdmin {
+				return nil, ErrForbidden
+			}
+		}
+		out, err = s.queryRecipes(
+			`SELECT `+recipeColumns+` FROM recipes
+			 WHERE brewery_id = ? AND status = ? AND delivered_at IS NOT NULL
+			   AND delivered_at >= ? AND delivered_at < ?
+			 ORDER BY delivered_at, id`,
+			breweryID, StatusDelivered, start, endExclusive,
+		)
+	} else if actor.IsAdmin() {
+		out, err = s.queryRecipes(
+			`SELECT `+recipeColumns+` FROM recipes
+			 WHERE status = ? AND delivered_at IS NOT NULL
+			   AND delivered_at >= ? AND delivered_at < ?
+			 ORDER BY delivered_at, id`,
+			StatusDelivered, start, endExclusive,
+		)
+	} else {
+		out, err = s.queryRecipes(
+			`SELECT `+recipeColumnsAliased+` FROM recipes r
+			 INNER JOIN brewery_members m ON m.brewery_id = r.brewery_id
+			 WHERE m.user_id = ? AND m.role IN (?, ?)
+			   AND r.status = ? AND r.delivered_at IS NOT NULL
+			   AND r.delivered_at >= ? AND r.delivered_at < ?
+			 ORDER BY r.delivered_at, r.id`,
+			actor.UserID, RoleSuperuser, RoleBreweryAdmin, StatusDelivered, start, endExclusive,
+		)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := s.attachBreweryNames(out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CountByStatuses returns how many active recipes have one of the given statuses.
 func (s *RecipeService) CountByStatuses(statuses ...string) (int, error) {
 	if len(statuses) == 0 {
@@ -359,6 +422,26 @@ func (s *RecipeService) Create(actor Actor, breweryID int64, name string, ingred
 		}
 	}
 	return result, nil
+}
+
+// BrewAgain clones a delivered recipe into a new created batch with the same ingredients.
+func (s *RecipeService) BrewAgain(actor Actor, id int64) (*CreateResult, error) {
+	src, err := s.Get(actor, id)
+	if err != nil {
+		return nil, err
+	}
+	if src.Status != StatusDelivered {
+		return nil, ErrInvalidStatus
+	}
+	ings := make([]IngredientInput, 0, len(src.Ingredients))
+	for _, ing := range src.Ingredients {
+		ings = append(ings, IngredientInput{
+			InventoryItemID: ing.InventoryItemID,
+			Qty:             ing.Qty,
+			Unit:            ing.Unit,
+		})
+	}
+	return s.Create(actor, src.BreweryID, src.Name, ings)
 }
 
 // Update restores prior checkout, then checks out new ingredients (partial OK) and updates the name.

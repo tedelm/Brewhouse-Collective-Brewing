@@ -99,6 +99,34 @@ func (s *AccessService) CanManageEconomy(actor Actor) (bool, error) {
 	return actor.IsAdmin(), nil
 }
 
+// CanViewEconomy reports delivery-report read access (elevated admin or brewery manager).
+func (s *AccessService) CanViewEconomy(actor Actor) (bool, error) {
+	if actor.IsAdmin() {
+		return true, nil
+	}
+	var n int
+	err := s.db.QueryRow(
+		`SELECT COUNT(*) FROM brewery_members WHERE user_id = ? AND role IN (?, ?)`,
+		actor.UserID, RoleSuperuser, RoleBreweryAdmin,
+	).Scan(&n)
+	if err != nil {
+		return false, fmt.Errorf("economy view access: %w", err)
+	}
+	return n > 0, nil
+}
+
+// RequireEconomyView returns ErrForbidden if the actor cannot view economy reports.
+func (s *AccessService) RequireEconomyView(actor Actor) error {
+	ok, err := s.CanViewEconomy(actor)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrForbidden
+	}
+	return nil
+}
+
 // RequireBreweryAccess returns ErrForbidden if the actor cannot access the brewery.
 func (s *AccessService) RequireBreweryAccess(actor Actor, breweryID int64) error {
 	ok, err := s.CanAccessBrewery(actor, breweryID)

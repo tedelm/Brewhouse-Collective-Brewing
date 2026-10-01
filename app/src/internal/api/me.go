@@ -22,7 +22,12 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 			h.writeErr(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, user)
+		canView, err := h.access.CanViewEconomy(actor)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, MeResponse{User: *user, CanViewEconomy: canView})
 	case http.MethodPatch, http.MethodPut:
 		var req UpdateProfileRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

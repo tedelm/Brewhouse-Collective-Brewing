@@ -141,7 +141,7 @@
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.hygiene.routines">Routines</span></a>
+								<a class="shell__nav-sublink" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.hygiene.routines">Routines</span> <span class="shell__nav-count shell__nav-count--hygiene" data-hygiene-nav-count hidden></span></a>
 							</div>
 						</section>
 						<section class="shell__nav-section" data-nav-roles="user,superuser,admin">
@@ -154,15 +154,15 @@
 								<a class="shell__nav-sublink" href="/app/tools/calculators" hx-get="/app/tools/calculators" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.tools.calculators">Calculators</span></a>
 							</div>
 						</section>
-						<section class="shell__nav-section" data-nav-roles="admin">
+						<section class="shell__nav-section" data-nav-economy-section>
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">payments</span>
 								<span class="shell__nav-label" data-i18n="nav.economy">Economy</span>
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.economy.tax_rates">Tax rates</span></a>
-								<a class="shell__nav-sublink" href="/app/economy/deliveries" hx-get="/app/economy/deliveries" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.economy.monthly_deliveries">Monthly deliveries</span></a>
+								<a class="shell__nav-sublink" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin"><span data-i18n="nav.economy.tax_rates">Tax rates</span></a>
+								<a class="shell__nav-sublink" href="/app/economy/deliveries" hx-get="/app/economy/deliveries" hx-target="#main-content" hx-swap="innerHTML" data-nav-economy-deliveries><span data-i18n="nav.economy.monthly_deliveries">Monthly deliveries</span></a>
 							</div>
 						</section>
 						<section class="shell__nav-section" data-nav-roles="user,superuser,admin">
@@ -331,7 +331,7 @@
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.hygiene.routines">Routines</span></a>
+							<a class="shell__sheet-link" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.hygiene.routines">Routines</span> <span class="shell__nav-count shell__nav-count--hygiene" data-hygiene-nav-count hidden></span></a>
 						</div>
 					</section>
 					<section class="shell__sheet-section" data-nav-roles="user,superuser,admin">
@@ -344,15 +344,15 @@
 							<a class="shell__sheet-link" href="/app/tools/calculators" hx-get="/app/tools/calculators" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.tools.calculators">Calculators</span></a>
 						</div>
 					</section>
-					<section class="shell__sheet-section" data-nav-roles="admin">
+					<section class="shell__sheet-section" data-nav-economy-section>
 						<button type="button" class="shell__sheet-header" aria-expanded="false">
 							<span class="material-symbols-outlined" aria-hidden="true">payments</span>
 							<span class="shell__nav-label" data-i18n="nav.economy">Economy</span>
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.economy.tax_rates">Tax rates</span></a>
-							<a class="shell__sheet-link" href="/app/economy/deliveries" hx-get="/app/economy/deliveries" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.economy.monthly_deliveries">Monthly deliveries</span></a>
+							<a class="shell__sheet-link" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin"><span data-i18n="nav.economy.tax_rates">Tax rates</span></a>
+							<a class="shell__sheet-link" href="/app/economy/deliveries" hx-get="/app/economy/deliveries" hx-target="#main-content" hx-swap="innerHTML" data-nav-economy-deliveries><span data-i18n="nav.economy.monthly_deliveries">Monthly deliveries</span></a>
 						</div>
 					</section>
 					<section class="shell__sheet-section" data-nav-roles="user,superuser,admin">
@@ -420,6 +420,28 @@
 	<script src="/static/js/wasm_exec.js"></script>
 	<script src="/static/js/i18n.js"></script>
 	<script src="/static/js/wasm_loader.js"></script>
-	<script src="/static/js/app.js"></script>
+	<script src="/static/js/core/api.js"></script>
+	<script src="/static/js/core/ui.js"></script>
+	<script src="/static/js/panels/recipes.js"></script>
+	<script src="/static/js/panels/schedule.js"></script>
+	<script src="/static/js/panels/brewday.js"></script>
+	<script src="/static/js/panels/inventory.js"></script>
+	<script src="/static/js/panels/orders.js"></script>
+	<script src="/static/js/panels/hygiene.js"></script>
+	<script src="/static/js/panels/tools_calculators.js"></script>
+	<script src="/static/js/panels/economy.js"></script>
+	<script src="/static/js/panels/economy_deliveries.js"></script>
+	<script src="/static/js/panels/delivery.js"></script>
+	<script src="/static/js/panels/iam_users.js"></script>
+	<script src="/static/js/panels/iam_breweries.js"></script>
+	<script src="/static/js/panels/settings_brand.js"></script>
+	<script src="/static/js/panels/settings_tanks.js"></script>
+	<script src="/static/js/panels/settings_multipliers.js"></script>
+	<script src="/static/js/panels/settings_suppliers.js"></script>
+	<script src="/static/js/panels/settings_beer_price.js"></script>
+	<script src="/static/js/panels/settings_regional.js"></script>
+	<script src="/static/js/panels/settings_hygiene.js"></script>
+	<script src="/static/js/panels/settings_backup.js"></script>
+	<script src="/static/js/core/panel_registry.js"></script>
 </body>
 </html>

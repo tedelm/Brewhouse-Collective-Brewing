@@ -803,6 +803,22 @@ func (s *InventoryService) CountOpenOrders() (int, error) {
 	return n, nil
 }
 
+// CountShortfallLines returns planning-order lines linked to a recipe (wishlist shortfalls).
+func (s *InventoryService) CountShortfallLines() (int, error) {
+	var n int
+	err := s.db.QueryRow(
+		`SELECT COUNT(*)
+		 FROM inventory_order_lines l
+		 INNER JOIN inventory_orders o ON o.id = l.order_id
+		 WHERE o.status = ? AND l.recipe_id IS NOT NULL`,
+		OrderStatusPlanning,
+	).Scan(&n)
+	if err != nil {
+		return 0, fmt.Errorf("count shortfall lines: %w", err)
+	}
+	return n, nil
+}
+
 // GetOrder returns one order with lines.
 func (s *InventoryService) GetOrder(id int64) (*InventoryOrder, error) {
 	o := &InventoryOrder{}

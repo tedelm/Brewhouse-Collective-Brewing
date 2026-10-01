@@ -18,5 +18,16 @@
 		<button type="submit" class="btn btn--primary" data-i18n="schedule.book">Book</button>
 		<p class="panel__error" id="schedule-error" hidden></p>
 	</form>
+	<div class="schedule-views">
+		<div class="schedule-week-nav">
+			<button type="button" class="btn btn--small" data-action="schedule-week-prev" aria-label="Previous week">‹</button>
+			<strong id="schedule-week-label"></strong>
+			<button type="button" class="btn btn--small" data-action="schedule-week-next" aria-label="Next week">›</button>
+			<button type="button" class="btn btn--small" data-action="schedule-week-today" data-i18n="schedule.this_week">This week</button>
+		</div>
+		<div class="schedule-week" id="schedule-week" aria-live="polite"></div>
+		<h2 class="panel__subtitle" data-i18n="schedule.gantt_title">Tank occupancy</h2>
+		<div class="schedule-gantt-wrap" id="schedule-gantt"></div>
+	</div>
 	<div class="panel__body" id="schedule-list" data-i18n="common.loading">Loading…</div>
 </section>

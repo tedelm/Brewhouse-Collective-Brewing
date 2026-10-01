@@ -261,18 +261,20 @@ func (s *ScheduleService) Unbook(actor Actor, recipeID int64) error {
 	return tx.Commit()
 }
 
-// ListBookings returns brewery bookings in a date range.
+// ListBookings returns bookings that overlap a date range (brew day or tank occupancy).
 func (s *ScheduleService) ListBookings(from, to string) ([]map[string]any, error) {
 	rows, err := s.db.Query(
-		`SELECT r.id, r.status, b.booked_date, COALESCE(tb.end_date, b.booked_date), br.name, r.name, COALESCE(t.name, '')
+		`SELECT r.id, r.status, b.booked_date, COALESCE(tb.end_date, b.booked_date),
+		        br.id, br.name, r.name, COALESCE(tb.tank_id, 0), COALESCE(t.name, '')
 		 FROM brewery_bookings b
 		 INNER JOIN recipes r ON r.id = b.recipe_id
 		 INNER JOIN breweries br ON br.id = r.brewery_id
 		 LEFT JOIN tank_bookings tb ON tb.recipe_id = b.recipe_id
 		 LEFT JOIN fermentation_tanks t ON t.id = tb.tank_id
-		 WHERE b.booked_date >= ? AND b.booked_date <= ?
+		 WHERE COALESCE(tb.start_date, b.booked_date) <= ?
+		   AND COALESCE(tb.end_date, b.booked_date) >= ?
 		 ORDER BY b.booked_date`,
-		from, to,
+		to, from,
 	)
 	if err != nil {
 		return nil, err
@@ -280,19 +282,21 @@ func (s *ScheduleService) ListBookings(from, to string) ([]map[string]any, error
 	defer rows.Close()
 	var out []map[string]any
 	for rows.Next() {
-		var recipeID int64
+		var recipeID, breweryID, tankID int64
 		var status, date, endDate, breweryName, recipeName, tankName string
-		if err := rows.Scan(&recipeID, &status, &date, &endDate, &breweryName, &recipeName, &tankName); err != nil {
+		if err := rows.Scan(&recipeID, &status, &date, &endDate, &breweryID, &breweryName, &recipeName, &tankID, &tankName); err != nil {
 			return nil, err
 		}
 		out = append(out, map[string]any{
-			"recipe_id":     recipeID,
-			"status":        status,
-			"date":          date,
-			"end_date":      endDate,
-			"brewery_name":  breweryName,
-			"name":          recipeName,
-			"tank_name":     tankName,
+			"recipe_id":    recipeID,
+			"status":       status,
+			"date":         date,
+			"end_date":     endDate,
+			"brewery_id":   breweryID,
+			"brewery_name": breweryName,
+			"name":         recipeName,
+			"tank_id":      tankID,
+			"tank_name":    tankName,
 		})
 	}
 	return out, rows.Err()
