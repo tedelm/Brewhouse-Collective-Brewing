@@ -251,6 +251,10 @@ func migrate(db *sql.DB) error {
 			username TEXT NOT NULL,
 			password_plain TEXT NOT NULL
 		)`,
+		`CREATE TABLE IF NOT EXISTS app_meta (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL
+		)`,
 	}
 
 	for _, stmt := range statements {
@@ -297,6 +301,9 @@ func migrate(db *sql.DB) error {
 	}
 	if err := ensureBreweryInstagramColumn(db); err != nil {
 		return fmt.Errorf("ensure breweries.instagram: %w", err)
+	}
+	if err := ensureDemoColumns(db); err != nil {
+		return fmt.Errorf("ensure demo columns: %w", err)
 	}
 
 	if err := seedDefaults(db); err != nil {
@@ -398,6 +405,16 @@ func ensureRecipeActiveColumn(db *sql.DB) error {
 func ensureBreweryInstagramColumn(db *sql.DB) error {
 	return addColumnIfMissing(db, "breweries", "instagram",
 		`ALTER TABLE breweries ADD COLUMN instagram TEXT NOT NULL DEFAULT ''`)
+}
+
+// ensureDemoColumns adds is_demo markers used by first-run demo brewery seed/purge.
+func ensureDemoColumns(db *sql.DB) error {
+	if err := addColumnIfMissing(db, "breweries", "is_demo",
+		`ALTER TABLE breweries ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0`); err != nil {
+		return err
+	}
+	return addColumnIfMissing(db, "fermentation_tanks", "is_demo",
+		`ALTER TABLE fermentation_tanks ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0`)
 }
 
 func ensureUserEmailColumn(db *sql.DB) error {

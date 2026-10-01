@@ -443,6 +443,8 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		h.settingsBrandColor(w, r, actor, parts[1:])
 	case "backup":
 		h.settingsBackup(w, r, actor, parts[1:])
+	case "demo":
+		h.settingsDemo(w, r, actor, parts[1:])
 	default:
 		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
 	}
@@ -1122,4 +1124,37 @@ func (h *Handler) settingsBackup(w http.ResponseWriter, r *http.Request, actor s
 	default:
 		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 	}
+}
+
+func (h *Handler) settingsDemo(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if h.demo == nil {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
+		return
+	}
+	if len(parts) == 0 {
+		if r.Method != http.MethodGet {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		info, err := h.demo.DemoStatus()
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, DemoStatusResponse{Present: info.Present, Status: info.Status})
+		return
+	}
+	if len(parts) == 1 && parts[0] == "purge" {
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		if err := h.demo.PurgeDemo(actor); err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, DemoStatusResponse{Present: false, Status: "purged"})
+		return
+	}
+	writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
 }

@@ -32,6 +32,12 @@ type BackupRestoreResponse struct {
 	OK bool `json:"ok"`
 }
 
+// DemoStatusResponse is returned by GET /api/settings/demo and POST .../purge.
+type DemoStatusResponse struct {
+	Present bool   `json:"present"`
+	Status  string `json:"status"`
+}
+
 // VersionResponse is returned by GET /api/version.
 type VersionResponse struct {
 	Version string `json:"version"`
