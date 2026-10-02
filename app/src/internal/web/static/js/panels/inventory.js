@@ -140,6 +140,8 @@
 			form.elements.namedItem("unit").value = (item && item.unit) || defaultUnit;
 			form.elements.namedItem("qty").value = item && item.qty != null ? item.qty : 0;
 			form.elements.namedItem("cost_price").value = item && item.cost_price != null ? item.cost_price : 0;
+			form.elements.namedItem("vat_rate").value =
+				item && item.vat_rate != null && item.vat_rate !== undefined ? item.vat_rate : "";
 			if (titleEl) {
 				titleEl.textContent = item && item.id ? t("js.inventory.edit_item") : t("js.inventory.item");
 			}
@@ -150,12 +152,19 @@
 			const fd = new FormData(form);
 			const sidRaw = fd.get("supplier_id");
 			const sid = sidRaw ? parseInt(String(sidRaw), 10) : 0;
+			const vatRaw = String(fd.get("vat_rate") || "").trim();
+			let vatRate = null;
+			if (vatRaw !== "") {
+				const n = parseFloat(vatRaw);
+				vatRate = Number.isNaN(n) ? null : n;
+			}
 			return {
 				category,
 				name: fd.get("name"),
 				unit: fd.get("unit"),
 				qty: parseFloat(fd.get("qty")) || 0,
 				cost_price: parseFloat(fd.get("cost_price")) || 0,
+				vat_rate: vatRate,
 				producer: fd.get("producer") || "",
 				item_type: fd.get("item_type") || "",
 				min_ebc: parseFloat(fd.get("min_ebc")) || 0,
@@ -292,7 +301,7 @@
 					list.innerHTML = "<p class=\"panel__empty\">" + esc(t("js.inventory.empty")) + "</p>";
 					return;
 				}
-				const headers = isMalt
+					const headers = isMalt
 					? [
 							t("js.inventory.col.name"),
 							t("js.inventory.col.type"),
@@ -301,6 +310,7 @@
 							t("js.inventory.col.ebc"),
 							t("js.inventory.col.qty"),
 							t("js.inventory.col.cost"),
+							t("js.inventory.col.vat"),
 							t("js.inventory.col.effective_cost"),
 							"",
 							"",
@@ -313,6 +323,7 @@
 							t("js.inventory.col.unit"),
 							t("js.inventory.col.qty"),
 							t("js.inventory.col.cost"),
+							t("js.inventory.col.vat"),
 							t("js.inventory.col.effective_cost"),
 							"",
 							"",
@@ -352,6 +363,10 @@
 							const actions = [orderBtn, editBtn, deleteBtn].filter(Boolean).join(" ");
 							const effective =
 								i.effective_cost_price != null ? i.effective_cost_price : i.cost_price;
+							const vatLabel =
+								i.vat_rate != null && i.vat_rate !== undefined
+									? i.vat_rate + "%"
+									: "—";
 							const cells = isMalt
 								? "<td>" +
 								  esc(i.name) +
@@ -367,6 +382,8 @@
 								  i.qty +
 								  "</td><td>" +
 								  i.cost_price +
+								  "</td><td>" +
+								  esc(vatLabel) +
 								  "</td><td>" +
 								  effective +
 								  "</td><td>" +
@@ -388,6 +405,8 @@
 								  i.qty +
 								  "</td><td>" +
 								  i.cost_price +
+								  "</td><td>" +
+								  esc(vatLabel) +
 								  "</td><td>" +
 								  effective +
 								  "</td><td>" +

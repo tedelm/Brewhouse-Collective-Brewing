@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	usersCSVHeader = "username,password,email,role,active,first_name,last_name,address_line1,address_line2,phone,instagram"
+	usersCSVHeader = "username,password,email,role,active,first_name,last_name,address_line1,address_line2,phone,instagram,untappd"
 	importErrorCap = 20
 )
 
@@ -43,6 +43,7 @@ func (s *UserService) ExportUsersCSV() ([]byte, error) {
 			u.AddressLine2,
 			u.Phone,
 			u.Instagram,
+			u.Untappd,
 		}); err != nil {
 			return nil, fmt.Errorf("write users csv row: %w", err)
 		}
@@ -68,7 +69,7 @@ func (s *UserService) ImportUsersCSV(actor Actor, data []byte) (ImportResult, er
 	}
 	idx, err := mapCSVHeader(records[0], []string{
 		"username", "password", "email", "role", "active",
-		"first_name", "last_name", "address_line1", "address_line2", "phone", "instagram",
+		"first_name", "last_name", "address_line1", "address_line2", "phone", "instagram", "untappd",
 	})
 	if err != nil {
 		return ImportResult{}, err
@@ -106,6 +107,7 @@ func (s *UserService) importUserRow(idx map[string]int, rec []string) (action st
 		AddressLine2: csvCol(rec, idx, "address_line2"),
 		Phone:        csvCol(rec, idx, "phone"),
 		Instagram:    csvCol(rec, idx, "instagram"),
+		Untappd:      csvCol(rec, idx, "untappd"),
 	}
 	if username == "" {
 		return "", fmt.Errorf("username required")

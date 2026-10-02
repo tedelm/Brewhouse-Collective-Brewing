@@ -39,6 +39,10 @@ func main() {
 	if created {
 		logger.Println("Default admin created. Username: admin. Save the generated password shown on the login page securely. (length:", len(plain), ")")
 	}
+	if err := database.EnsureSetupWizardMeta(db.DB()); err != nil {
+		logger.Println("Failed to ensure setup wizard meta:", err)
+		return
+	}
 	breweries := service.NewBreweryService(db, access)
 	inventory := service.NewInventoryService(db, access)
 	settings := service.NewSettingsService(db, access)

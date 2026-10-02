@@ -281,6 +281,9 @@
 		document.querySelectorAll("[data-nav-economy-deliveries]").forEach((el) => {
 			el.classList.toggle("is-role-hidden", !show);
 		});
+		document.querySelectorAll("[data-nav-economy-purchases]").forEach((el) => {
+			el.classList.toggle("is-role-hidden", !show);
+		});
 	}
 
 	async function refreshEconomyAccess() {
@@ -502,6 +505,48 @@
 		if (window.BH_I18N && typeof window.BH_I18N.applyI18n === "function") {
 			window.BH_I18N.applyI18n(document);
 		}
+		maybeRunFirstRunGuides();
+	}
+
+	async function maybeRunFirstRunGuides() {
+		await maybeRunSetupWizard();
+		await maybeRunAppTour();
+	}
+
+	async function maybeRunSetupWizard() {
+		try {
+			const res = await fetch("/api/settings/setup-wizard", { headers: authHeaders() });
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || !data.needed) {
+				return;
+			}
+			if (canElevate() && currentRole() !== "admin") {
+				try {
+					await setElevated(true);
+				} catch (err) {
+					console.error("Setup wizard elevate failed:", err);
+					return;
+				}
+			}
+			if (window.BrewhouseSetupWizard && typeof window.BrewhouseSetupWizard.run === "function") {
+				await window.BrewhouseSetupWizard.run();
+				applyNavVisibility(currentRole());
+				syncAdminToggle();
+				await loadRegionalSettings();
+			}
+		} catch (err) {
+			console.error("Setup wizard check failed:", err);
+		}
+	}
+
+	async function maybeRunAppTour() {
+		try {
+			if (window.BrewhouseAppTour && typeof window.BrewhouseAppTour.run === "function") {
+				await window.BrewhouseAppTour.run();
+			}
+		} catch (err) {
+			console.error("App tour failed:", err);
+		}
 	}
 
 	async function loadRegionalSettings() {
@@ -630,6 +675,10 @@
 		}
 		if (kind === "economy-deliveries" && !canViewEconomy()) {
 			showHome();
+			return;
+		}
+		if (kind === "economy-purchases" && !canViewEconomy()) {
+			showHome();
 		}
 	}
 
@@ -677,6 +726,7 @@
 			profileForm.address_line2.value = data.address_line2 || "";
 			profileForm.phone.value = data.phone || "";
 			profileForm.instagram.value = data.instagram || "";
+			profileForm.untappd.value = data.untappd || "";
 			profileDialog.showModal();
 		} catch (err) {
 			console.error(err);
@@ -828,6 +878,7 @@
 				address_line2: profileForm.address_line2.value.trim(),
 				phone: profileForm.phone.value.trim(),
 				instagram: profileForm.instagram.value.trim(),
+				untappd: profileForm.untappd.value.trim(),
 			};
 			if (password) {
 				body.password = password;

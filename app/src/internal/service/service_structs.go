@@ -57,6 +57,7 @@ type User struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 	Role         string `json:"role"`
 	Active       bool   `json:"active"`
 	CreatedAt    string `json:"created_at,omitempty"`
@@ -70,6 +71,7 @@ type UserContact struct {
 	AddressLine2 string
 	Phone        string
 	Instagram    string
+	Untappd      string
 }
 
 // Brewery is a sub-brewery under the shared inventory umbrella.
@@ -80,6 +82,7 @@ type Brewery struct {
 	ContactEmail   string `json:"contact_email"`
 	ContactPhone   string `json:"contact_phone"`
 	Instagram      string `json:"instagram"`
+	Untappd        string `json:"untappd"`
 	CreatedAt      string `json:"created_at,omitempty"`
 	CanManage      bool   `json:"can_manage"`
 	LogoConfigured bool   `json:"logo_configured"`
@@ -100,8 +103,9 @@ type InventoryItem struct {
 	Name               string  `json:"name"`
 	Unit               string  `json:"unit"`
 	Qty                float64 `json:"qty"`
-	CostPrice          float64 `json:"cost_price"`
-	Producer           string  `json:"producer"`
+	CostPrice          float64  `json:"cost_price"`
+	VATRate            *float64 `json:"vat_rate,omitempty"`
+	Producer           string   `json:"producer"`
 	ItemType           string  `json:"item_type"`
 	MinEBC             float64 `json:"min_ebc"`
 	MaxEBC             float64 `json:"max_ebc"`
@@ -137,6 +141,7 @@ type InventoryLogEntry struct {
 }
 
 // InventoryOrder is a purchase / wishlist order.
+// InventoryOrder is a purchase wishlist / order.
 type InventoryOrder struct {
 	ID              int64                `json:"id"`
 	Status          string               `json:"status"`
@@ -147,6 +152,7 @@ type InventoryOrder struct {
 	UpdatedAt       string               `json:"updated_at"`
 	OrderedAt       *string              `json:"ordered_at,omitempty"`
 	Total           float64              `json:"total"`
+	VATTotal        float64              `json:"vat_total"`
 	Lines           []InventoryOrderLine `json:"lines,omitempty"`
 }
 
@@ -161,6 +167,8 @@ type InventoryOrderLine struct {
 	OrderedQty      *float64 `json:"ordered_qty,omitempty"`
 	CostPrice       float64  `json:"cost_price"`
 	LineCost        float64  `json:"line_cost"`
+	VATRate         float64  `json:"vat_rate"`
+	VATAmount       float64  `json:"vat_amount"`
 	Unit            string   `json:"unit"`
 	Link            string   `json:"link,omitempty"`
 	BreweryID       *int64   `json:"brewery_id,omitempty"`
@@ -218,6 +226,55 @@ type TaxPreview struct {
 	Plato    float64 `json:"plato"`
 	PerLiter float64 `json:"per_liter"`
 	Total    float64 `json:"total"`
+}
+
+// VATConfig is the sales/purchase VAT rate for a tax country.
+type VATConfig struct {
+	Country     string  `json:"country"`
+	RatePercent float64 `json:"rate_percent"`
+}
+
+// SetupWizardStatus reports whether the first-run regional/tax wizard is still needed.
+type SetupWizardStatus struct {
+	Needed bool   `json:"needed"`
+	Status string `json:"status"`
+}
+
+// AppTourStatus reports whether the interactive how-to tour is still needed for the actor.
+type AppTourStatus struct {
+	Needed bool   `json:"needed"`
+	Status string `json:"status"`
+}
+
+// PurchaseVATSummary is purchase VAT for a calendar month.
+type PurchaseVATSummary struct {
+	Month    string  `json:"month"`
+	VATTotal float64 `json:"vat_total"`
+}
+
+// PurchaseCostLine is one order line in a monthly purchase-cost report.
+type PurchaseCostLine struct {
+	OrderID     int64    `json:"order_id"`
+	OrderedAt   string   `json:"ordered_at"`
+	Status      string   `json:"status"`
+	ItemName    string   `json:"item_name"`
+	Category    string   `json:"category"`
+	Qty         float64  `json:"qty"`
+	OrderedQty  *float64 `json:"ordered_qty,omitempty"`
+	CostPrice   float64  `json:"cost_price"`
+	LineCost    float64  `json:"line_cost"`
+	VATRate     float64  `json:"vat_rate"`
+	VATAmount   float64  `json:"vat_amount"`
+	Unit        string   `json:"unit,omitempty"`
+	BreweryName string   `json:"brewery_name,omitempty"`
+}
+
+// PurchaseCostReport is purchase costs and VAT for a calendar month.
+type PurchaseCostReport struct {
+	Month     string             `json:"month"`
+	CostTotal float64            `json:"cost_total"`
+	VATTotal  float64            `json:"vat_total"`
+	Lines     []PurchaseCostLine `json:"lines"`
 }
 
 // BeerPriceConfig holds the minimum net sale price per liter (SEK).
@@ -289,6 +346,8 @@ type Recipe struct {
 	Tax              *float64           `json:"tax,omitempty"`
 	Net              *float64           `json:"net,omitempty"`
 	CurrencyCode     string             `json:"currency_code,omitempty"`
+	VATSales         *float64           `json:"vat_sales,omitempty"`
+	VATRate          *float64           `json:"vat_rate,omitempty"`
 	CreatedBy        *int64             `json:"created_by,omitempty"`
 	CreatedAt        string             `json:"created_at"`
 	DeliveredAt      *string            `json:"delivered_at,omitempty"`

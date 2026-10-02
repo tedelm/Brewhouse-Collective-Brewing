@@ -49,6 +49,7 @@ func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
 				AddressLine2: req.AddressLine2,
 				Phone:        req.Phone,
 				Instagram:    req.Instagram,
+				Untappd:      req.Untappd,
 			})
 			if err != nil {
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -167,6 +168,7 @@ func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
 			AddressLine2: req.AddressLine2,
 			Phone:        req.Phone,
 			Instagram:    req.Instagram,
+			Untappd:      req.Untappd,
 		})
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -211,7 +213,7 @@ func (h *Handler) Breweries(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 				return
 			}
-			b, err := h.breweries.Create(actor, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.BreweryAdminUserID)
+			b, err := h.breweries.Create(actor, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.Untappd, req.BreweryAdminUserID)
 			if err != nil {
 				h.writeErr(w, err)
 				return
@@ -314,7 +316,7 @@ func (h *Handler) Breweries(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 				return
 			}
-			b, err := h.breweries.Update(actor, id, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.BreweryAdminUserID)
+			b, err := h.breweries.Update(actor, id, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.Untappd, req.BreweryAdminUserID)
 			if err != nil {
 				h.writeErr(w, err)
 				return
@@ -480,6 +482,7 @@ func (h *Handler) Inventory(w http.ResponseWriter, r *http.Request) {
 				Unit:        req.Unit,
 				Qty:         req.Qty,
 				CostPrice:   req.CostPrice,
+				VATRate:     req.VATRate,
 				Producer:    req.Producer,
 				ItemType:    req.ItemType,
 				MinEBC:      req.MinEBC,
@@ -624,6 +627,7 @@ func (h *Handler) Inventory(w http.ResponseWriter, r *http.Request) {
 			Unit:        req.Unit,
 			Qty:         req.Qty,
 			CostPrice:   req.CostPrice,
+			VATRate:     req.VATRate,
 			Producer:    req.Producer,
 			ItemType:    req.ItemType,
 			MinEBC:      req.MinEBC,
@@ -779,8 +783,8 @@ func (h *Handler) inventoryOrders(w http.ResponseWriter, r *http.Request, actor 
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 				return
 			}
-			if req.Link == nil && req.OrderedQty == nil && req.CostPrice == nil {
-				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "ordered_qty, cost_price, or link required"})
+			if req.Link == nil && req.OrderedQty == nil && req.CostPrice == nil && req.VATRate == nil {
+				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "ordered_qty, cost_price, vat_rate, or link required"})
 				return
 			}
 			var order *service.InventoryOrder
@@ -800,6 +804,13 @@ func (h *Handler) inventoryOrders(w http.ResponseWriter, r *http.Request, actor 
 			}
 			if req.CostPrice != nil {
 				order, err = h.inventory.UpdateOrderLineCostPrice(actor, id, lineID, *req.CostPrice)
+				if err != nil {
+					h.writeErr(w, err)
+					return
+				}
+			}
+			if req.VATRate != nil {
+				order, err = h.inventory.UpdateOrderLineVATRate(actor, id, lineID, *req.VATRate)
 				if err != nil {
 					h.writeErr(w, err)
 					return

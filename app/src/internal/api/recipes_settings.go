@@ -425,6 +425,12 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		h.settingsTax(w, r, actor, parts[1:])
 	case "tax-config":
 		h.settingsTaxConfig(w, r, actor, parts[1:])
+	case "vat-config":
+		h.settingsVATConfig(w, r, actor, parts[1:])
+	case "purchase-vat":
+		h.settingsPurchaseVAT(w, r, actor, parts[1:])
+	case "purchase-costs":
+		h.settingsPurchaseCosts(w, r, actor, parts[1:])
 	case "tax-preview":
 		h.settingsTaxPreview(w, r, actor, parts[1:])
 	case "multipliers":
@@ -435,6 +441,8 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		h.settingsBeerPrice(w, r, actor, parts[1:])
 	case "regional":
 		h.settingsRegional(w, r, actor, parts[1:])
+	case "setup-wizard":
+		h.settingsSetupWizard(w, r, actor, parts[1:])
 	case "hygiene-routines":
 		h.settingsHygiene(w, r, actor, parts[1:])
 	case "logo":
@@ -634,6 +642,84 @@ func (h *Handler) settingsTaxConfig(w http.ResponseWriter, r *http.Request, acto
 	}
 }
 
+func (h *Handler) settingsVATConfig(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if len(parts) != 0 {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		cfg, err := h.settings.GetVATConfig()
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, cfg)
+	case http.MethodPut, http.MethodPatch:
+		var req VATConfigRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
+			return
+		}
+		cfg, err := h.settings.UpdateVATConfig(actor, req.RatePercent)
+		if err != nil {
+			if errors.Is(err, service.ErrForbidden) {
+				h.writeErr(w, err)
+				return
+			}
+			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, cfg)
+	default:
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+	}
+}
+
+func (h *Handler) settingsPurchaseVAT(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if len(parts) != 0 {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+		return
+	}
+	month := r.URL.Query().Get("month")
+	if month == "" {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "month required"})
+		return
+	}
+	sum, err := h.settings.SumPurchaseVATForMonth(actor, month)
+	if err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, sum)
+}
+
+func (h *Handler) settingsPurchaseCosts(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if len(parts) != 0 {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+		return
+	}
+	month := r.URL.Query().Get("month")
+	if month == "" {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "month required"})
+		return
+	}
+	report, err := h.settings.ListPurchaseCostsForMonth(actor, month)
+	if err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, report)
+}
+
 func (h *Handler) settingsTaxPreview(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
 	if len(parts) != 0 {
 		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
@@ -727,6 +813,49 @@ func (h *Handler) settingsRegional(w http.ResponseWriter, r *http.Request, actor
 	default:
 		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 	}
+}
+
+func (h *Handler) settingsSetupWizard(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if len(parts) == 0 {
+		if r.Method != http.MethodGet {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		status, err := h.settings.GetSetupWizardStatus(actor)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, status)
+		return
+	}
+	if len(parts) == 1 && parts[0] == "complete" {
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		status, err := h.settings.CompleteSetupWizard(actor)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, status)
+		return
+	}
+	if len(parts) == 1 && parts[0] == "reset" {
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		status, err := h.settings.ResetSetupWizard(actor)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, status)
+		return
+	}
+	writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
 }
 
 func (h *Handler) settingsMultipliers(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {

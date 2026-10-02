@@ -146,6 +146,7 @@
 					form.querySelector('[name="address_line2"]').value = user.address_line2 || "";
 					form.querySelector('[name="phone"]').value = user.phone || "";
 					form.querySelector('[name="instagram"]').value = user.instagram || "";
+					form.querySelector('[name="untappd"]').value = user.untappd || "";
 					roleSel.value = user.role || "user";
 					const editingSelfAdmin =
 						String(user.id) === selfID && (user.role || "") === "admin";
@@ -186,6 +187,7 @@
 					form.querySelector('[name="address_line2"]').value = user.address_line2 || "";
 					form.querySelector('[name="phone"]').value = user.phone || "";
 					form.querySelector('[name="instagram"]').value = user.instagram || "";
+					form.querySelector('[name="untappd"]').value = user.untappd || "";
 					form.querySelector('[name="password"]').value = "";
 					dlg.showModal();
 				} catch (e) {
@@ -216,6 +218,7 @@
 				address_line2: fd.get("address_line2"),
 				phone: fd.get("phone"),
 				instagram: fd.get("instagram"),
+				untappd: fd.get("untappd"),
 				role: fd.get("role"),
 			};
 			const breweryID = fd.get("brewery_id");
@@ -261,6 +264,7 @@
 						address_line2: fd.get("address_line2"),
 						phone: fd.get("phone"),
 						instagram: fd.get("instagram"),
+						untappd: fd.get("untappd"),
 						role: role,
 					}),
 				});
@@ -298,6 +302,7 @@
 						address_line2: fd.get("address_line2"),
 						phone: fd.get("phone"),
 						instagram: fd.get("instagram"),
+						untappd: fd.get("untappd"),
 						role: fd.get("role"),
 						password: password,
 					}),

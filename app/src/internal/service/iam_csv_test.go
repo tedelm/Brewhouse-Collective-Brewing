@@ -13,8 +13,8 @@ func TestUsersCSV_ExportImportUpsertSkipsPassword(t *testing.T) {
 	_, admin := ensureAdminUser(t, users)
 
 	csv1 := "" +
-		"username,password,email,role,active,first_name,last_name,address_line1,address_line2,phone,instagram\n" +
-		"alice,secret1!,alice@brew.test,user,1,Alice,A,,,,,\n"
+		"username,password,email,role,active,first_name,last_name,address_line1,address_line2,phone,instagram,untappd\n" +
+		"alice,secret1!,alice@brew.test,user,1,Alice,A,,,,,,\n"
 	res, err := users.ImportUsersCSV(admin, []byte(csv1))
 	if err != nil {
 		t.Fatalf("import create: %v", err)
@@ -27,8 +27,8 @@ func TestUsersCSV_ExportImportUpsertSkipsPassword(t *testing.T) {
 	}
 
 	csv2 := "" +
-		"username,password,email,role,active,first_name,last_name,address_line1,address_line2,phone,instagram\n" +
-		"alice,changed-password,alice2@brew.test,superuser,1,Alice,Updated,,,,,\n"
+		"username,password,email,role,active,first_name,last_name,address_line1,address_line2,phone,instagram,untappd\n" +
+		"alice,changed-password,alice2@brew.test,superuser,1,Alice,Updated,,,,,,\n"
 	res, err = users.ImportUsersCSV(admin, []byte(csv2))
 	if err != nil {
 		t.Fatalf("import update: %v", err)
@@ -80,8 +80,8 @@ func TestBreweriesCSV_ExportImportUpsert(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	csv1 := "name,contact_name,contact_email,contact_phone,instagram\n" +
-		"Alpha Brew,Ann,ann@a.test,111,https://instagram.com/alpha\n"
+	csv1 := "name,contact_name,contact_email,contact_phone,instagram,untappd\n" +
+		"Alpha Brew,Ann,ann@a.test,111,https://instagram.com/alpha,https://untappd.com/brewery/alpha\n"
 	res, err := breweries.ImportBreweriesCSV(admin, []byte(csv1))
 	if err != nil {
 		t.Fatalf("import create: %v", err)
@@ -90,9 +90,9 @@ func TestBreweriesCSV_ExportImportUpsert(t *testing.T) {
 		t.Fatalf("unexpected create: %+v", res)
 	}
 
-	csv2 := "name,contact_name,contact_email,contact_phone,instagram\n" +
-		"Alpha Brew,Bob,bob@a.test,222,https://instagram.com/bob\n" +
-		"Beta Brew,Bea,bea@b.test,333,\n"
+	csv2 := "name,contact_name,contact_email,contact_phone,instagram,untappd\n" +
+		"Alpha Brew,Bob,bob@a.test,222,https://instagram.com/bob,https://untappd.com/brewery/bob\n" +
+		"Beta Brew,Bea,bea@b.test,333,,\n"
 	res, err = breweries.ImportBreweriesCSV(admin, []byte(csv2))
 	if err != nil {
 		t.Fatalf("import upsert: %v", err)
@@ -114,7 +114,7 @@ func TestBreweriesCSV_ExportImportUpsert(t *testing.T) {
 			beta = &list[i]
 		}
 	}
-	if alpha == nil || alpha.ContactName != "Bob" || alpha.ContactEmail != "bob@a.test" || alpha.ContactPhone != "222" || alpha.Instagram != "https://instagram.com/bob" {
+	if alpha == nil || alpha.ContactName != "Bob" || alpha.ContactEmail != "bob@a.test" || alpha.ContactPhone != "222" || alpha.Instagram != "https://instagram.com/bob" || alpha.Untappd != "https://untappd.com/brewery/bob" {
 		t.Fatalf("alpha not updated: %+v", alpha)
 	}
 	if beta == nil || beta.ContactName != "Bea" {
@@ -126,7 +126,7 @@ func TestBreweriesCSV_ExportImportUpsert(t *testing.T) {
 		t.Fatalf("export: %v", err)
 	}
 	text := string(exported)
-	if !strings.Contains(text, "name,contact_name,contact_email,contact_phone,instagram") {
+	if !strings.Contains(text, "name,contact_name,contact_email,contact_phone,instagram,untappd") {
 		t.Fatalf("missing header")
 	}
 	if !strings.Contains(text, "Alpha Brew") || !strings.Contains(text, "Beta Brew") {
@@ -143,7 +143,7 @@ func TestMembersCSV_ExportImportAddUpdateNoDelete(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	brewery, err := breweries.Create(admin, "Gamma Brew", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Gamma Brew", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}

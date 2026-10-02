@@ -10,6 +10,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"strconv"
 	"strings"
 
 	"brewhouse/internal/database"
@@ -516,6 +517,296 @@ func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, langua
 		return nil, err
 	}
 	return s.GetRegionalConfig()
+}
+
+// GetVATConfig returns VAT rate for the active tax country (defaults 25%).
+func (s *SettingsService) GetVATConfig() (*VATConfig, error) {
+	regional, err := s.GetRegionalConfig()
+	if err != nil {
+		return nil, err
+	}
+	return s.GetVATConfigForCountry(regional.TaxCountry)
+}
+
+// GetVATConfigForCountry loads one country's VAT rate.
+func (s *SettingsService) GetVATConfigForCountry(country string) (*VATConfig, error) {
+	if !tax.ValidCountry(country) {
+		country = tax.CountrySV
+	}
+	cfg := &VATConfig{Country: country}
+	err := s.db.QueryRow(
+		`SELECT rate_percent FROM vat_config WHERE country = ?`, country,
+	).Scan(&cfg.RatePercent)
+	if errors.Is(err, sql.ErrNoRows) {
+		cfg.RatePercent = 25
+		return cfg, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get vat config: %w", err)
+	}
+	return cfg, nil
+}
+
+// UpdateVATConfig updates the active country's VAT rate percent.
+func (s *SettingsService) UpdateVATConfig(actor Actor, ratePercent float64) (*VATConfig, error) {
+	ok, err := s.access.CanManageEconomy(actor)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrForbidden
+	}
+	if ratePercent < 0 || ratePercent > 100 {
+		return nil, fmt.Errorf("rate_percent must be between 0 and 100")
+	}
+	regional, err := s.GetRegionalConfig()
+	if err != nil {
+		return nil, err
+	}
+	country := regional.TaxCountry
+	if !tax.ValidCountry(country) {
+		return nil, fmt.Errorf("invalid tax country")
+	}
+	_, err = s.db.Exec(
+		`INSERT INTO vat_config (country, rate_percent) VALUES (?, ?)
+		 ON CONFLICT(country) DO UPDATE SET rate_percent = excluded.rate_percent`,
+		country, ratePercent,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetVATConfigForCountry(country)
+}
+
+const purchaseCostMonthFilter = `
+		 o.status IN ('ordered', 'completed')
+		   AND (
+		     (o.ordered_at IS NOT NULL AND o.ordered_at >= ? AND o.ordered_at < date(?, '+1 month'))
+		     OR (o.ordered_at IS NULL AND o.updated_at >= ? AND o.updated_at < date(?, '+1 month'))
+		   )`
+
+func validatePurchaseMonth(month string) (string, error) {
+	if len(month) != 7 || month[4] != '-' {
+		return "", fmt.Errorf("month must be YYYY-MM")
+	}
+	return month + "-01", nil
+}
+
+// ListPurchaseCostsForMonth returns order lines and cost/VAT totals for YYYY-MM.
+func (s *SettingsService) ListPurchaseCostsForMonth(actor Actor, month string) (*PurchaseCostReport, error) {
+	if err := s.access.RequireEconomyView(actor); err != nil {
+		return nil, err
+	}
+	start, err := validatePurchaseMonth(month)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.db.Query(
+		`SELECT o.id, COALESCE(o.ordered_at, o.updated_at, ''), o.status,
+		        l.item_name, l.category, l.qty, l.ordered_qty,
+		        COALESCE(l.cost_price, 0), COALESCE(l.vat_rate, 0), COALESCE(l.vat_amount, 0),
+		        COALESCE(i.unit, ''), COALESCE(b.name, '')
+		 FROM inventory_order_lines l
+		 INNER JOIN inventory_orders o ON o.id = l.order_id
+		 LEFT JOIN inventory_items i ON i.id = l.inventory_item_id
+		 LEFT JOIN breweries b ON b.id = l.brewery_id
+		 WHERE `+purchaseCostMonthFilter+`
+		 ORDER BY COALESCE(o.ordered_at, o.updated_at), o.id, l.item_name`,
+		start, start, start, start,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list purchase costs: %w", err)
+	}
+	defer rows.Close()
+
+	report := &PurchaseCostReport{Month: month, Lines: []PurchaseCostLine{}}
+	for rows.Next() {
+		var line PurchaseCostLine
+		var orderedQty sql.NullFloat64
+		if err := rows.Scan(
+			&line.OrderID, &line.OrderedAt, &line.Status,
+			&line.ItemName, &line.Category, &line.Qty, &orderedQty,
+			&line.CostPrice, &line.VATRate, &line.VATAmount,
+			&line.Unit, &line.BreweryName,
+		); err != nil {
+			return nil, err
+		}
+		if orderedQty.Valid {
+			v := orderedQty.Float64
+			line.OrderedQty = &v
+		}
+		qty := line.Qty
+		if line.OrderedQty != nil {
+			qty = *line.OrderedQty
+		}
+		line.LineCost = line.CostPrice * qty
+		report.CostTotal += line.LineCost
+		report.VATTotal += line.VATAmount
+		report.Lines = append(report.Lines, line)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+// SumPurchaseVATForMonth sums order-line VAT for orders ordered/updated in YYYY-MM
+// with status ordered or completed.
+func (s *SettingsService) SumPurchaseVATForMonth(actor Actor, month string) (*PurchaseVATSummary, error) {
+	report, err := s.ListPurchaseCostsForMonth(actor, month)
+	if err != nil {
+		return nil, err
+	}
+	return &PurchaseVATSummary{Month: report.Month, VATTotal: report.VATTotal}, nil
+}
+
+const (
+	metaSetupWizard           = "setup_wizard"
+	setupWizardStatusComplete = "complete"
+	setupWizardStatusPending  = "pending"
+	metaAppTourPrefix         = "app_tour:"
+	appTourStatusComplete     = "complete"
+)
+
+func appTourMetaKey(userID int64) string {
+	return metaAppTourPrefix + strconv.FormatInt(userID, 10)
+}
+
+func (s *SettingsService) getMeta(key string) (string, error) {
+	var value string
+	err := s.db.QueryRow(`SELECT value FROM app_meta WHERE key = ?`, key).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("get app_meta %q: %w", key, err)
+	}
+	return value, nil
+}
+
+func (s *SettingsService) setMeta(key, value string) error {
+	_, err := s.db.Exec(
+		`INSERT INTO app_meta (key, value) VALUES (?, ?)
+		 ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+		key, value,
+	)
+	if err != nil {
+		return fmt.Errorf("set app_meta %q: %w", key, err)
+	}
+	return nil
+}
+
+func (s *SettingsService) accountIsAdmin(userID int64) (bool, error) {
+	if userID <= 0 {
+		return false, nil
+	}
+	var role string
+	err := s.db.QueryRow(`SELECT role FROM users WHERE id = ?`, userID).Scan(&role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return role == RoleAdmin, nil
+}
+
+// GetSetupWizardStatus returns whether the first-run wizard should be shown.
+// Needed when status is not complete and the account is (or can elevate to) admin.
+func (s *SettingsService) GetSetupWizardStatus(actor Actor) (*SetupWizardStatus, error) {
+	status, err := s.getMeta(metaSetupWizard)
+	if err != nil {
+		return nil, err
+	}
+	out := &SetupWizardStatus{Status: status, Needed: false}
+	if status == setupWizardStatusComplete {
+		return out, nil
+	}
+	if actor.IsAdmin() {
+		out.Needed = true
+		return out, nil
+	}
+	isAdmin, err := s.accountIsAdmin(actor.UserID)
+	if err != nil {
+		return nil, err
+	}
+	out.Needed = isAdmin
+	return out, nil
+}
+
+// CompleteSetupWizard marks the first-run wizard as finished.
+func (s *SettingsService) CompleteSetupWizard(actor Actor) (*SetupWizardStatus, error) {
+	if actor.IsAdmin() {
+		if err := s.setMeta(metaSetupWizard, setupWizardStatusComplete); err != nil {
+			return nil, err
+		}
+		return &SetupWizardStatus{Needed: false, Status: setupWizardStatusComplete}, nil
+	}
+	isAdmin, err := s.accountIsAdmin(actor.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrForbidden
+	}
+	if err := s.setMeta(metaSetupWizard, setupWizardStatusComplete); err != nil {
+		return nil, err
+	}
+	return &SetupWizardStatus{Needed: false, Status: setupWizardStatusComplete}, nil
+}
+
+// ResetSetupWizard marks the regional/tax wizard as pending so it can be retaken.
+func (s *SettingsService) ResetSetupWizard(actor Actor) (*SetupWizardStatus, error) {
+	if !actor.IsAdmin() {
+		isAdmin, err := s.accountIsAdmin(actor.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if !isAdmin {
+			return nil, ErrForbidden
+		}
+	}
+	if err := s.setMeta(metaSetupWizard, setupWizardStatusPending); err != nil {
+		return nil, err
+	}
+	return &SetupWizardStatus{Needed: true, Status: setupWizardStatusPending}, nil
+}
+
+// GetAppTourStatus returns whether the interactive app tour should be shown for the actor.
+func (s *SettingsService) GetAppTourStatus(actor Actor) (*AppTourStatus, error) {
+	if actor.UserID <= 0 {
+		return nil, ErrForbidden
+	}
+	status, err := s.getMeta(appTourMetaKey(actor.UserID))
+	if err != nil {
+		return nil, err
+	}
+	return &AppTourStatus{
+		Status: status,
+		Needed: status != appTourStatusComplete,
+	}, nil
+}
+
+// CompleteAppTour marks the interactive app tour as finished for the actor.
+func (s *SettingsService) CompleteAppTour(actor Actor) (*AppTourStatus, error) {
+	if actor.UserID <= 0 {
+		return nil, ErrForbidden
+	}
+	if err := s.setMeta(appTourMetaKey(actor.UserID), appTourStatusComplete); err != nil {
+		return nil, err
+	}
+	return &AppTourStatus{Needed: false, Status: appTourStatusComplete}, nil
+}
+
+// ResetAppTour clears the tour completion so it can be shown again for the actor.
+func (s *SettingsService) ResetAppTour(actor Actor) (*AppTourStatus, error) {
+	if actor.UserID <= 0 {
+		return nil, ErrForbidden
+	}
+	if err := s.setMeta(appTourMetaKey(actor.UserID), ""); err != nil {
+		return nil, err
+	}
+	return &AppTourStatus{Needed: true, Status: ""}, nil
 }
 
 // GetBeerPriceConfig returns min net SEK/L (defaults to 0 if missing).

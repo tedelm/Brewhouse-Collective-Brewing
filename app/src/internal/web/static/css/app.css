@@ -843,7 +843,7 @@ body {
 }
 
 .shell__welcome {
-	max-width: 28rem;
+	max-width: 36rem;
 	margin: 1.5rem auto;
 	padding: 2.25rem 1.75rem 2rem;
 	border-radius: 1rem;
@@ -897,15 +897,21 @@ body {
 	margin: 0 0 0.55rem;
 	font-size: 1.15rem;
 	font-weight: 600;
+	line-height: 1.35;
 	color: #3d4132;
 	animation: welcome-fade-up 0.55s ease 0.14s both;
 }
 
 .shell__welcome-text {
-	margin: 0 0 1.35rem;
+	margin: 0 0 0.85rem;
 	color: rgba(42, 44, 34, 0.75);
 	line-height: 1.5;
 	animation: welcome-fade-up 0.55s ease 0.2s both;
+}
+
+.shell__welcome-pitch {
+	margin-bottom: 1.35rem;
+	animation-delay: 0.22s;
 }
 
 .shell__welcome-actions {
@@ -2181,4 +2187,107 @@ input.btn[type="month"]::-webkit-calendar-picker-indicator {
 .data-table__th--help:focus-visible {
 	color: #1f3d2b;
 	outline: none;
+}
+
+.setup-wizard {
+	max-width: 32rem;
+	width: calc(100vw - 2rem);
+}
+
+.setup-wizard__header {
+	margin-bottom: 0.75rem;
+}
+
+.setup-wizard__steps {
+	margin: 0.35rem 0 0;
+	font-size: 0.85rem;
+	color: #6b7280;
+}
+
+.setup-wizard__step h3 {
+	margin: 0 0 0.75rem;
+	font-size: 1.05rem;
+}
+
+.setup-wizard__actions {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+}
+
+.setup-wizard__actions #setup-wizard-skip {
+	margin-right: auto;
+}
+
+.app-tour {
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+	pointer-events: none;
+}
+
+.app-tour[hidden] {
+	display: none !important;
+}
+
+.app-tour__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(24, 26, 20, 0.55);
+	pointer-events: auto;
+}
+
+.app-tour__spotlight {
+	position: absolute;
+	border-radius: 0.5rem;
+	box-shadow: 0 0 0 9999px rgba(24, 26, 20, 0.55);
+	outline: 2px solid #f4f5f0;
+	pointer-events: none;
+	z-index: 1;
+	transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+.app-tour__card {
+	position: absolute;
+	z-index: 2;
+	max-width: 22.5rem;
+	padding: 1rem 1.1rem;
+	border-radius: 0.6rem;
+	background: #f4f5f0;
+	color: #2a2c22;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+	pointer-events: auto;
+}
+
+.app-tour__steps {
+	margin: 0 0 0.35rem;
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
+.app-tour__title {
+	margin: 0 0 0.4rem;
+	font-size: 1.1rem;
+	font-weight: 650;
+}
+
+.app-tour__body {
+	margin: 0 0 0.9rem;
+	font-size: 0.95rem;
+	line-height: 1.45;
+}
+
+.app-tour__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.app-tour__actions #app-tour-skip {
+	margin-right: auto;
+}
+
+.app-tour-target {
+	position: relative;
+	z-index: 1201;
 }

@@ -45,6 +45,7 @@
 		const sumCost = panel.querySelector("#economy-deliveries-sum-cost");
 		const sumTax = panel.querySelector("#economy-deliveries-sum-tax");
 		const sumNet = panel.querySelector("#economy-deliveries-sum-net");
+		const sumVAT = panel.querySelector("#economy-deliveries-sum-vat");
 		const sumProfit = panel.querySelector("#economy-deliveries-sum-profit");
 		let rows = [];
 
@@ -85,6 +86,10 @@
 				title: t("js.economy.col.net"),
 				message: t("js.economy.help.net"),
 			},
+			vat: {
+				title: t("js.economy.col.vat"),
+				message: t("js.economy.help.vat"),
+			},
 			profit: {
 				title: t("js.economy.col.profit"),
 				message: t("js.economy.help.profit"),
@@ -105,6 +110,7 @@
 			{ key: "cost", label: t("js.economy.col.cost") },
 			{ key: "tax", label: t("js.economy.col.tax") },
 			{ key: "net", label: t("js.economy.col.net") },
+			{ key: "vat", label: t("js.economy.col.vat") },
 			{ key: "profit", label: t("js.economy.col.profit") },
 			{ key: "net-per-l", label: t("js.economy.net_per_l", { currency: currencyCode() }) },
 		];
@@ -164,6 +170,9 @@
 				sumCost.textContent = "—";
 				sumNet.textContent = "—";
 				sumTax.textContent = "—";
+				if (sumVAT) {
+					sumVAT.textContent = "—";
+				}
 				sumProfit.textContent = "—";
 				return;
 			}
@@ -175,6 +184,9 @@
 			sumCost.textContent = formatMoneyByCurrency(totalsByCurrency, "cost");
 			sumTax.textContent = formatMoneyByCurrency(totalsByCurrency, "tax");
 			sumNet.textContent = formatMoneyByCurrency(totalsByCurrency, "net");
+			if (sumVAT) {
+				sumVAT.textContent = formatMoneyByCurrency(totalsByCurrency, "vat");
+			}
 			sumProfit.textContent = formatMoneyByCurrency(totalsByCurrency, "profit");
 		}
 
@@ -198,6 +210,7 @@
 				t("js.economy.col.cost"),
 				t("js.economy.col.tax"),
 				t("js.economy.col.net"),
+				t("js.economy.col.vat"),
 				t("js.economy.col.profit"),
 				t("js.economy.col.currency"),
 				t("js.economy.net_per_l", { currency: currencyCode() }),
@@ -224,6 +237,7 @@
 						r.cost != null ? Number(r.cost).toFixed(2) : "",
 						r.tax != null ? Number(r.tax).toFixed(2) : "",
 						r.net != null ? Number(r.net).toFixed(2) : "",
+						r.vat_sales != null ? Number(r.vat_sales).toFixed(2) : "",
 						profit,
 						cur,
 						netPerLiter(r),
@@ -272,7 +286,7 @@
 				rows.forEach((r) => {
 					const cur = recipeCurrency(r);
 					if (!totalsByCurrency[cur]) {
-						totalsByCurrency[cur] = { volume: 0, cost: 0, tax: 0, net: 0, profit: 0 };
+						totalsByCurrency[cur] = { volume: 0, cost: 0, tax: 0, net: 0, vat: 0, profit: 0 };
 					}
 					const cost = Number(r.cost) || 0;
 					const net = Number(r.net) || 0;
@@ -280,6 +294,7 @@
 					totalsByCurrency[cur].cost += cost;
 					totalsByCurrency[cur].tax += Number(r.tax) || 0;
 					totalsByCurrency[cur].net += net;
+					totalsByCurrency[cur].vat += Number(r.vat_sales) || 0;
 					totalsByCurrency[cur].profit += net - cost;
 				});
 				setSummary(totalsByCurrency);
@@ -313,6 +328,8 @@
 								fmtMoney(r.tax, cur) +
 								"</td><td>" +
 								fmtMoney(r.net, cur) +
+								"</td><td>" +
+								fmtMoney(r.vat_sales, cur) +
 								"</td><td>" +
 								fmtMoney(net - cost, cur) +
 								"</td><td>" +

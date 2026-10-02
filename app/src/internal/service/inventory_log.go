@@ -124,6 +124,9 @@ func inventoryCreateSummary(in InventoryItem) string {
 		"unit=" + in.Unit,
 		"cost_price=" + formatLogQty(in.CostPrice),
 	}
+	if in.VATRate != nil {
+		parts = append(parts, "vat_rate="+formatLogQty(*in.VATRate))
+	}
 	if in.Producer != "" {
 		parts = append(parts, "producer="+in.Producer)
 	}
@@ -160,6 +163,9 @@ func inventoryUpdateSummary(before, after InventoryItem) string {
 	}
 	if before.CostPrice != after.CostPrice {
 		parts = append(parts, fmt.Sprintf("cost_price: %s → %s", formatLogQty(before.CostPrice), formatLogQty(after.CostPrice)))
+	}
+	if !sameOptionalFloat(before.VATRate, after.VATRate) {
+		parts = append(parts, fmt.Sprintf("vat_rate: %s → %s", formatOptionalLogQty(before.VATRate), formatOptionalLogQty(after.VATRate)))
 	}
 	if before.Producer != after.Producer {
 		parts = append(parts, fmt.Sprintf("producer: %q → %q", before.Producer, after.Producer))
@@ -207,4 +213,21 @@ func supplierLogLabel(item InventoryItem) string {
 		return formatLogQty(float64(*item.SupplierID))
 	}
 	return ""
+}
+
+func sameOptionalFloat(a, b *float64) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
+}
+
+func formatOptionalLogQty(v *float64) string {
+	if v == nil {
+		return "default"
+	}
+	return formatLogQty(*v)
 }

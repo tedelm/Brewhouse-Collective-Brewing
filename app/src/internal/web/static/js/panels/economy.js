@@ -129,8 +129,8 @@
 				'<p class="panel__lead" data-i18n="economy.tax.es_bands_note">Spain uses fixed ABV/°Plato bands (2026). Rates are built into the calculator.</p>';
 		}
 		container.innerHTML = html;
-		if (window.BH_I18N && typeof window.BH_I18N.apply === "function") {
-			window.BH_I18N.apply(container);
+		if (window.BH_I18N && typeof window.BH_I18N.applyI18n === "function") {
+			window.BH_I18N.applyI18n(container);
 		}
 	}
 
@@ -249,7 +249,10 @@
 			}
 		}
 
-		panel.querySelector('[data-action="economy-refresh"]').addEventListener("click", refresh);
+		panel.querySelector('[data-action="economy-refresh"]').addEventListener("click", () => {
+			refresh();
+			refreshVAT();
+		});
 		form.addEventListener("submit", async (ev) => {
 			ev.preventDefault();
 			errEl.hidden = true;
@@ -277,7 +280,65 @@
 				errEl.textContent = e.message;
 			}
 		});
+
+		const vatForm = panel.querySelector("#economy-vat-form");
+		const vatErrEl = panel.querySelector("#economy-vat-error");
+		const vatRateInput = panel.querySelector("#economy-vat-rate");
+		const vatCountryLabelEl = panel.querySelector("#economy-vat-country-label");
+
+		async function refreshVAT() {
+			if (!vatForm) {
+				return;
+			}
+			try {
+				const cfg = await api("/api/settings/vat-config");
+				if (vatCountryLabelEl) {
+					vatCountryLabelEl.textContent =
+						t("economy.tax.active_country") + ": " + countryLabel(cfg.country);
+				}
+				if (vatRateInput) {
+					vatRateInput.value = cfg.rate_percent != null ? cfg.rate_percent : 25;
+				}
+			} catch (e) {
+				if (vatErrEl) {
+					vatErrEl.hidden = false;
+					vatErrEl.textContent = e.message;
+				}
+			}
+		}
+
+		if (vatForm) {
+			vatForm.addEventListener("submit", async (ev) => {
+				ev.preventDefault();
+				if (vatErrEl) {
+					vatErrEl.hidden = true;
+				}
+				if (!canRoles(["superuser", "admin"])) {
+					return;
+				}
+				try {
+					const cfg = await api("/api/settings/vat-config", {
+						method: "PUT",
+						body: JSON.stringify({
+							rate_percent: parseFloat(vatRateInput.value),
+						}),
+					});
+					if (vatCountryLabelEl) {
+						vatCountryLabelEl.textContent =
+							t("economy.tax.active_country") + ": " + countryLabel(cfg.country);
+					}
+					vatRateInput.value = cfg.rate_percent;
+				} catch (e) {
+					if (vatErrEl) {
+						vatErrEl.hidden = false;
+						vatErrEl.textContent = e.message;
+					}
+				}
+			});
+		}
+
 		refresh();
+		refreshVAT();
 	}
 
 	window.BrewhousePanels = window.BrewhousePanels || {};

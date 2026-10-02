@@ -113,7 +113,7 @@ func TestSupplier_SnapshotsUseEffectiveCost(t *testing.T) {
 		t.Fatalf("expected order line cost 110, got %+v", order.Lines)
 	}
 
-	brewery, err := breweries.Create(admin, "Snap Brewery", "A", "a@t.com", "", "", nil)
+	brewery, err := breweries.Create(admin, "Snap Brewery", "A", "a@t.com", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}

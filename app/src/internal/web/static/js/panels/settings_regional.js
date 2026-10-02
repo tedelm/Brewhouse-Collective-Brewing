@@ -45,6 +45,7 @@
 		const languageSel = panel.querySelector("#settings-regional-language");
 		const taxSel = panel.querySelector("#settings-regional-tax-country");
 		const gravitySel = panel.querySelector("#settings-regional-gravity");
+		const retakeBtn = panel.querySelector("[data-action='retake-setup-wizard']");
 
 		async function refresh() {
 			try {
@@ -80,6 +81,27 @@
 				errEl.textContent = e.message;
 			}
 		});
+
+		if (retakeBtn) {
+			retakeBtn.addEventListener("click", async () => {
+				errEl.hidden = true;
+				try {
+					await api("/api/settings/setup-wizard/reset", { method: "POST" });
+					if (window.BrewhouseSetupWizard && typeof window.BrewhouseSetupWizard.run === "function") {
+						await window.BrewhouseSetupWizard.run();
+						await refresh();
+						if (window.BH_I18N && typeof window.BH_I18N.applyRegional === "function") {
+							const cfg = await api("/api/settings/regional");
+							await window.BH_I18N.applyRegional(cfg);
+						}
+					}
+				} catch (e) {
+					errEl.hidden = false;
+					errEl.textContent = e.message;
+				}
+			});
+		}
+
 		refresh();
 	}
 

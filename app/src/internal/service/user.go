@@ -64,24 +64,40 @@ func normalizeContact(c UserContact) UserContact {
 		AddressLine2: strings.TrimSpace(c.AddressLine2),
 		Phone:        strings.TrimSpace(c.Phone),
 		Instagram:    strings.TrimSpace(c.Instagram),
+		Untappd:      strings.TrimSpace(c.Untappd),
 	}
 }
 
-func validateInstagramURL(raw string) error {
+func validateHTTPURL(field, raw string) error {
 	if raw == "" {
 		return nil
 	}
 	u, err := url.ParseRequestURI(raw)
 	if err != nil {
-		return fmt.Errorf("instagram must be a valid http or https URL")
+		return fmt.Errorf("%s must be a valid http or https URL", field)
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("instagram must be a valid http or https URL")
+		return fmt.Errorf("%s must be a valid http or https URL", field)
 	}
 	if u.Host == "" {
-		return fmt.Errorf("instagram must be a valid http or https URL")
+		return fmt.Errorf("%s must be a valid http or https URL", field)
 	}
 	return nil
+}
+
+func validateInstagramURL(raw string) error {
+	return validateHTTPURL("instagram", raw)
+}
+
+func validateUntappdURL(raw string) error {
+	return validateHTTPURL("untappd", raw)
+}
+
+func validateContactURLs(c UserContact) error {
+	if err := validateInstagramURL(c.Instagram); err != nil {
+		return err
+	}
+	return validateUntappdURL(c.Untappd)
 }
 
 // validatePassword requires at least 8 characters and one special character
@@ -110,9 +126,10 @@ func applyContact(u *User, c UserContact) {
 	u.AddressLine2 = c.AddressLine2
 	u.Phone = c.Phone
 	u.Instagram = c.Instagram
+	u.Untappd = c.Untappd
 }
 
-const userSelectCols = `id, username, email, first_name, last_name, address_line1, address_line2, phone, instagram, role, active, created_at`
+const userSelectCols = `id, username, email, first_name, last_name, address_line1, address_line2, phone, instagram, untappd, role, active, created_at`
 
 func scanUser(scanner interface {
 	Scan(dest ...any) error
@@ -123,13 +140,13 @@ func scanUser(scanner interface {
 	if includePassword {
 		err = scanner.Scan(
 			&u.ID, &u.Username, &u.PasswordHash, &u.Email,
-			&u.FirstName, &u.LastName, &u.AddressLine1, &u.AddressLine2, &u.Phone, &u.Instagram,
+			&u.FirstName, &u.LastName, &u.AddressLine1, &u.AddressLine2, &u.Phone, &u.Instagram, &u.Untappd,
 			&u.Role, &active,
 		)
 	} else {
 		err = scanner.Scan(
 			&u.ID, &u.Username, &u.Email,
-			&u.FirstName, &u.LastName, &u.AddressLine1, &u.AddressLine2, &u.Phone, &u.Instagram,
+			&u.FirstName, &u.LastName, &u.AddressLine1, &u.AddressLine2, &u.Phone, &u.Instagram, &u.Untappd,
 			&u.Role, &active, &u.CreatedAt,
 		)
 	}
@@ -163,8 +180,8 @@ func (s *UserService) EnsureDefaultAdmin() (plainPassword string, created bool, 
 
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 	_, err = s.db.Exec(
-		`INSERT INTO users (username, password_hash, email, first_name, last_name, address_line1, address_line2, phone, instagram, role, active, created_at)
-		 VALUES (?, ?, ?, '', '', '', '', '', '', ?, 1, ?)`,
+		`INSERT INTO users (username, password_hash, email, first_name, last_name, address_line1, address_line2, phone, instagram, untappd, role, active, created_at)
+		 VALUES (?, ?, ?, '', '', '', '', '', '', '', ?, 1, ?)`,
 		defaultAdminUsername,
 		string(hash),
 		defaultAdminEmail,
@@ -224,7 +241,7 @@ func (s *UserService) ClearBootstrapCredentialsIfMatch(username string) error {
 // Authenticate verifies username and password and returns the user on success.
 func (s *UserService) Authenticate(username, password string) (*User, error) {
 	row := s.db.QueryRow(
-		`SELECT id, username, password_hash, email, first_name, last_name, address_line1, address_line2, phone, instagram, role, active
+		`SELECT id, username, password_hash, email, first_name, last_name, address_line1, address_line2, phone, instagram, untappd, role, active
 		 FROM users WHERE username = ?`,
 		username,
 	)
@@ -295,7 +312,7 @@ func (s *UserService) Create(username, password, email, role string, contact Use
 	if !validUserRole(role) {
 		return nil, fmt.Errorf("role must be user, superuser, or admin")
 	}
-	if err := validateInstagramURL(contact.Instagram); err != nil {
+	if err := validateContactURLs(contact); err != nil {
 		return nil, err
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -304,10 +321,10 @@ func (s *UserService) Create(username, password, email, role string, contact Use
 	}
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 	res, err := s.db.Exec(
-		`INSERT INTO users (username, password_hash, email, first_name, last_name, address_line1, address_line2, phone, instagram, role, active, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+		`INSERT INTO users (username, password_hash, email, first_name, last_name, address_line1, address_line2, phone, instagram, untappd, role, active, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
 		username, string(hash), email,
-		contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram,
+		contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram, contact.Untappd,
 		role, createdAt,
 	)
 	if err != nil {
@@ -338,7 +355,7 @@ func (s *UserService) Update(id int64, username, password, email, role string, c
 		email = existing.Email
 	}
 	contact = normalizeContact(contact)
-	if err := validateInstagramURL(contact.Instagram); err != nil {
+	if err := validateContactURLs(contact); err != nil {
 		return nil, err
 	}
 
@@ -351,9 +368,9 @@ func (s *UserService) Update(id int64, username, password, email, role string, c
 			return nil, fmt.Errorf("hash password: %w", err)
 		}
 		_, err = s.db.Exec(
-			`UPDATE users SET username = ?, password_hash = ?, email = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ?, role = ? WHERE id = ?`,
+			`UPDATE users SET username = ?, password_hash = ?, email = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ?, untappd = ?, role = ? WHERE id = ?`,
 			username, string(hash), email,
-			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram,
+			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram, contact.Untappd,
 			role, id,
 		)
 		if err != nil {
@@ -361,9 +378,9 @@ func (s *UserService) Update(id int64, username, password, email, role string, c
 		}
 	} else {
 		_, err = s.db.Exec(
-			`UPDATE users SET username = ?, email = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ?, role = ? WHERE id = ?`,
+			`UPDATE users SET username = ?, email = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ?, untappd = ?, role = ? WHERE id = ?`,
 			username, email,
-			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram,
+			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram, contact.Untappd,
 			role, id,
 		)
 		if err != nil {
@@ -380,7 +397,7 @@ func (s *UserService) UpdateProfile(id int64, email, password string, contact Us
 	if email == "" {
 		return nil, fmt.Errorf("email required")
 	}
-	if err := validateInstagramURL(contact.Instagram); err != nil {
+	if err := validateContactURLs(contact); err != nil {
 		return nil, err
 	}
 	if password != "" {
@@ -392,9 +409,9 @@ func (s *UserService) UpdateProfile(id int64, email, password string, contact Us
 			return nil, fmt.Errorf("hash password: %w", err)
 		}
 		_, err = s.db.Exec(
-			`UPDATE users SET email = ?, password_hash = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ? WHERE id = ?`,
+			`UPDATE users SET email = ?, password_hash = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ?, untappd = ? WHERE id = ?`,
 			email, string(hash),
-			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram,
+			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram, contact.Untappd,
 			id,
 		)
 		if err != nil {
@@ -402,9 +419,9 @@ func (s *UserService) UpdateProfile(id int64, email, password string, contact Us
 		}
 	} else {
 		_, err := s.db.Exec(
-			`UPDATE users SET email = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ? WHERE id = ?`,
+			`UPDATE users SET email = ?, first_name = ?, last_name = ?, address_line1 = ?, address_line2 = ?, phone = ?, instagram = ?, untappd = ? WHERE id = ?`,
 			email,
-			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram,
+			contact.FirstName, contact.LastName, contact.AddressLine1, contact.AddressLine2, contact.Phone, contact.Instagram, contact.Untappd,
 			id,
 		)
 		if err != nil {

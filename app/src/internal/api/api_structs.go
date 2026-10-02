@@ -64,6 +64,7 @@ type CreateUserRequest struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 	Role         string `json:"role"`
 	BreweryID    *int64 `json:"brewery_id"`
 }
@@ -79,6 +80,7 @@ type UpdateUserRequest struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 	Role         string `json:"role"`
 }
 
@@ -97,6 +99,7 @@ type UpdateProfileRequest struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 }
 
 // CreateBreweryRequest is the body for brewery create.
@@ -106,6 +109,7 @@ type CreateBreweryRequest struct {
 	ContactEmail       string `json:"contact_email"`
 	ContactPhone       string `json:"contact_phone"`
 	Instagram          string `json:"instagram"`
+	Untappd            string `json:"untappd"`
 	BreweryAdminUserID *int64 `json:"brewery_admin_user_id"`
 }
 
@@ -117,22 +121,23 @@ type MemberRequest struct {
 
 // InventoryItemRequest is create/update body for inventory.
 type InventoryItemRequest struct {
-	Category    string  `json:"category"`
-	Name        string  `json:"name"`
-	Unit        string  `json:"unit"`
-	Qty         float64 `json:"qty"`
-	CostPrice   float64 `json:"cost_price"`
-	Producer    string  `json:"producer"`
-	ItemType    string  `json:"item_type"`
-	MinEBC      float64 `json:"min_ebc"`
-	MaxEBC      float64 `json:"max_ebc"`
-	Link        string  `json:"link"`
-	PitchMinGHl float64 `json:"pitch_min_g_hl"`
-	PitchMaxGHl float64 `json:"pitch_max_g_hl"`
-	PackSizeG   float64 `json:"pack_size_g"`
-	TempMinC    float64 `json:"temp_min_c"`
-	TempMaxC    float64 `json:"temp_max_c"`
-	SupplierID  *int64  `json:"supplier_id"`
+	Category    string   `json:"category"`
+	Name        string   `json:"name"`
+	Unit        string   `json:"unit"`
+	Qty         float64  `json:"qty"`
+	CostPrice   float64  `json:"cost_price"`
+	VATRate     *float64 `json:"vat_rate"`
+	Producer    string   `json:"producer"`
+	ItemType    string   `json:"item_type"`
+	MinEBC      float64  `json:"min_ebc"`
+	MaxEBC      float64  `json:"max_ebc"`
+	Link        string   `json:"link"`
+	PitchMinGHl float64  `json:"pitch_min_g_hl"`
+	PitchMaxGHl float64  `json:"pitch_max_g_hl"`
+	PackSizeG   float64  `json:"pack_size_g"`
+	TempMinC    float64  `json:"temp_min_c"`
+	TempMaxC    float64  `json:"temp_max_c"`
+	SupplierID  *int64   `json:"supplier_id"`
 }
 
 // InventoryLogResponse is a paginated change-history page for one inventory item.
@@ -164,11 +169,17 @@ type OrderLineRequest struct {
 	BreweryID       *int64  `json:"brewery_id,omitempty"`
 }
 
-// UpdateOrderLineRequest patches ordered qty, cost price, and/or product link on a line.
+// UpdateOrderLineRequest patches ordered qty, cost price, VAT rate, and/or product link on a line.
 type UpdateOrderLineRequest struct {
 	OrderedQty *float64 `json:"ordered_qty,omitempty"`
 	CostPrice  *float64 `json:"cost_price,omitempty"`
+	VATRate    *float64 `json:"vat_rate,omitempty"`
 	Link       *string  `json:"link,omitempty"`
+}
+
+// VATConfigRequest updates the active country's VAT rate percent.
+type VATConfigRequest struct {
+	RatePercent float64 `json:"rate_percent"`
 }
 
 // UpdateOrderRequest patches notes, status, and/or external order id.

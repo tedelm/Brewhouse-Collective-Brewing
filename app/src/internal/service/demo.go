@@ -2,11 +2,15 @@ package service
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"time"
 
 	"brewhouse/internal/database"
 )
+
+//go:embed demo_logo.png
+var demoBreweryLogoPNG []byte
 
 const (
 	metaDemoStatus     = "demo_status"
@@ -15,6 +19,12 @@ const (
 	demoBreweryName    = "Demo Brewery"
 	demoTank1Name      = "Demo FV-1"
 	demoTank2Name      = "Demo FV-2"
+	demoMaltName       = "Extra Pale Premium Pilsner Malt"
+	demoHopsName       = "Cascade"
+	demoYeastName      = "Fermentis SafAle US-05"
+	demoMaltTopUp      = 200.0
+	demoHopsTopUp      = 3000.0
+	demoYeastTopUp     = 20.0
 )
 
 // DemoService seeds and purges first-run demo brewery data.
@@ -131,6 +141,15 @@ func (s *DemoService) PurgeDemo(actor Actor) error {
 	}
 
 	for _, breweryID := range breweryIDs {
+		if _, err := s.db.Exec(
+			`DELETE FROM inventory_orders
+			 WHERE id IN (
+			   SELECT DISTINCT order_id FROM inventory_order_lines WHERE brewery_id = ?
+			 )`,
+			breweryID,
+		); err != nil {
+			return fmt.Errorf("delete demo orders for brewery %d: %w", breweryID, err)
+		}
 		recipeRows, err := s.db.Query(`SELECT id FROM recipes WHERE brewery_id = ?`, breweryID)
 		if err != nil {
 			return fmt.Errorf("list demo recipes: %w", err)
@@ -161,6 +180,9 @@ func (s *DemoService) PurgeDemo(actor Actor) error {
 	if _, err := s.db.Exec(`DELETE FROM fermentation_tanks WHERE is_demo = 1`); err != nil {
 		return fmt.Errorf("delete demo tanks: %w", err)
 	}
+	if err := s.reverseDemoInventoryTopUps(actor); err != nil {
+		return err
+	}
 	return s.setMeta(metaDemoStatus, demoStatusPurged)
 }
 
@@ -172,14 +194,16 @@ func (s *DemoService) seedDemo(actor Actor) error {
 		"Demo Brewer",
 		"demo@brewhouse.local",
 		"",
-		"",
-		&adminID,
+		"", "", &adminID,
 	)
 	if err != nil {
 		return fmt.Errorf("create demo brewery: %w", err)
 	}
 	if _, err := s.db.Exec(`UPDATE breweries SET is_demo = 1 WHERE id = ?`, brewery.ID); err != nil {
 		return fmt.Errorf("mark demo brewery: %w", err)
+	}
+	if err := s.breweries.SetLogo(actor, brewery.ID, "image/png", demoBreweryLogoPNG); err != nil {
+		return fmt.Errorf("set demo brewery logo: %w", err)
 	}
 
 	tank1, err := s.settings.CreateTank(actor, demoTank1Name, 1000)
@@ -197,25 +221,25 @@ func (s *DemoService) seedDemo(actor Actor) error {
 		return fmt.Errorf("mark demo tanks: %w", err)
 	}
 
-	malt, err := s.findInventoryItem(CategoryMalt, "Extra Pale Premium Pilsner Malt")
+	malt, err := s.findInventoryItem(CategoryMalt, demoMaltName)
 	if err != nil {
 		return err
 	}
-	hops, err := s.findInventoryItem(CategoryHops, "Cascade")
+	hops, err := s.findInventoryItem(CategoryHops, demoHopsName)
 	if err != nil {
 		return err
 	}
-	yeast, err := s.findInventoryItem(CategoryYeast, "Fermentis SafAle US-05")
+	yeast, err := s.findInventoryItem(CategoryYeast, demoYeastName)
 	if err != nil {
 		return err
 	}
-	if err := s.topUpInventory(malt.ID, 200); err != nil {
+	if err := s.topUpInventory(malt.ID, demoMaltTopUp); err != nil {
 		return err
 	}
-	if err := s.topUpInventory(hops.ID, 3000); err != nil {
+	if err := s.topUpInventory(hops.ID, demoHopsTopUp); err != nil {
 		return err
 	}
-	if err := s.topUpInventory(yeast.ID, 20); err != nil {
+	if err := s.topUpInventory(yeast.ID, demoYeastTopUp); err != nil {
 		return err
 	}
 
@@ -298,6 +322,15 @@ func (s *DemoService) seedDemo(actor Actor) error {
 			return fmt.Errorf("deliver %q: %w", b.name, err)
 		}
 	}
+
+	breweryID := brewery.ID
+	if _, err := s.inventory.CreateOrder(actor, "Demo wishlist", "", []OrderLineInput{
+		{InventoryItemID: malt.ID, Qty: 25, BreweryID: &breweryID},
+		{InventoryItemID: hops.ID, Qty: 500, BreweryID: &breweryID},
+		{InventoryItemID: yeast.ID, Qty: 2, BreweryID: &breweryID},
+	}); err != nil {
+		return fmt.Errorf("create demo order: %w", err)
+	}
 	return nil
 }
 
@@ -371,12 +404,72 @@ func (s *DemoService) findInventoryItem(category, name string) (*InventoryItem, 
 	return s.inventory.Get(id)
 }
 
+func (s *DemoService) reverseDemoInventoryTopUps(actor Actor) error {
+	type topUp struct {
+		category string
+		name     string
+		qty      float64
+	}
+	items := []topUp{
+		{CategoryMalt, demoMaltName, demoMaltTopUp},
+		{CategoryHops, demoHopsName, demoHopsTopUp},
+		{CategoryYeast, demoYeastName, demoYeastTopUp},
+	}
+	for _, item := range items {
+		inv, err := s.findInventoryItem(item.category, item.name)
+		if err != nil {
+			// Seed may have failed part-way; skip missing catalog rows.
+			continue
+		}
+		if err := s.drawDownInventory(actor, inv, item.qty); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *DemoService) topUpInventory(id int64, qty float64) error {
 	_, err := s.db.Exec(`UPDATE inventory_items SET qty = qty + ? WHERE id = ?`, qty, id)
 	if err != nil {
 		return fmt.Errorf("top up inventory %d: %w", id, err)
 	}
 	return nil
+}
+
+func (s *DemoService) drawDownInventory(actor Actor, item *InventoryItem, qty float64) error {
+	if item == nil || qty <= 0 {
+		return nil
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var qtyBefore float64
+	if err := tx.QueryRow(`SELECT qty FROM inventory_items WHERE id = ?`, item.ID).Scan(&qtyBefore); err != nil {
+		return fmt.Errorf("read inventory %d: %w", item.ID, err)
+	}
+	draw := qty
+	if draw > qtyBefore {
+		draw = qtyBefore
+	}
+	if draw <= 0 {
+		return nil
+	}
+	qtyAfter := qtyBefore - draw
+	if _, err := tx.Exec(`UPDATE inventory_items SET qty = ? WHERE id = ?`, qtyAfter, item.ID); err != nil {
+		return fmt.Errorf("draw down inventory %d: %w", item.ID, err)
+	}
+	itemID := item.ID
+	summary := fmt.Sprintf(
+		"demo purge draw down -%s (qty: %s → %s)",
+		formatLogQty(draw), formatLogQty(qtyBefore), formatLogQty(qtyAfter),
+	)
+	if err := s.inventory.appendItemLog(tx, &itemID, item.Name, actor, summary); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *DemoService) defaultMultiplierID() (int64, error) {

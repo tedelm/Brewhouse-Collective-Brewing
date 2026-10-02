@@ -1,0 +1,16 @@
+<section class="panel" data-panel="economy-purchases">
+	<header class="panel__header">
+		<h1 class="panel__title" data-i18n="economy.purchases.title">Purchase costs</h1>
+		<p class="panel__lead" data-i18n="economy.purchases.lead">List ordered and completed purchase-order lines for a month with unit cost, line cost, and purchase VAT. Download CSV for export.</p>
+	</header>
+	<div class="panel__toolbar">
+		<input type="month" class="btn" id="economy-purchases-month" data-i18n-attr="aria-label:common.month" required>
+		<button type="button" class="btn" data-action="economy-purchases-refresh" data-i18n="common.refresh">Refresh</button>
+		<button type="button" class="btn" data-action="economy-purchases-csv" data-i18n="common.download_csv">Download CSV</button>
+	</div>
+	<div class="economy-deliveries-summary" id="economy-purchases-summary" aria-live="polite">
+		<div><span class="economy-deliveries-summary__label" data-i18n="economy.purchases.cost">Cost</span> <strong id="economy-purchases-sum-cost">—</strong></div>
+		<div><span class="economy-deliveries-summary__label" data-i18n="economy.purchases.vat">Purchase VAT</span> <strong id="economy-purchases-sum-vat">—</strong></div>
+	</div>
+	<div class="panel__body" id="economy-purchases-list" data-i18n="common.loading">Loading…</div>
+</section>

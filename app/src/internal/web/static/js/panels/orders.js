@@ -56,6 +56,8 @@
 		const orderedQtyForm = panel.querySelector("#order-ordered-qty-form");
 		const costDialog = panel.querySelector("#order-cost-dialog");
 		const costForm = panel.querySelector("#order-cost-form");
+		const vatDialog = panel.querySelector("#order-vat-dialog");
+		const vatForm = panel.querySelector("#order-vat-form");
 		const linksDialog = panel.querySelector("#order-links-dialog");
 		const linksList = panel.querySelector("#order-links-list");
 		const linksTitle = panel.querySelector("#order-links-title");
@@ -114,6 +116,8 @@
 									: l.qty;
 							const costPrice = l.cost_price != null ? l.cost_price : 0;
 							const lineCost = l.line_cost != null ? l.line_cost : costPrice * orderQty;
+							const vatRate = l.vat_rate != null ? l.vat_rate : 0;
+							const vatAmount = l.vat_amount != null ? l.vat_amount : 0;
 							let text =
 								esc(l.item_name) +
 								" (" +
@@ -129,13 +133,15 @@
 								orderQty +
 								unit +
 								" · " +
-								costPrice +
-								" " +
-								currencyCode() +
+								fmtMoney(costPrice) +
 								"/unit · line " +
-								lineCost +
+								fmtMoney(lineCost) +
+								" · " +
+								t("js.orders.vat") +
 								" " +
-								currencyCode();
+								vatRate +
+								"% = " +
+								fmtMoney(vatAmount);
 							if (canEditLines) {
 								text +=
 									' <button type="button" class="btn btn--small" data-action="order-line-ordered-qty" data-order-id="' +
@@ -155,6 +161,16 @@
 									'" data-cost="' +
 									costPrice +
 									'">Set cost</button>';
+								text +=
+									' <button type="button" class="btn btn--small" data-action="order-line-vat" data-order-id="' +
+									order.id +
+									'" data-line-id="' +
+									l.id +
+									'" data-vat="' +
+									vatRate +
+									'">' +
+									esc(t("js.orders.set_vat")) +
+									"</button>";
 							}
 							return "<li>" + text + "</li>";
 						})
@@ -357,10 +373,12 @@
 							'<p class="order-total"><strong>' +
 							t("js.orders.total") +
 							": " +
-							(o.total != null ? o.total : 0) +
-							" " +
-							currencyCode() +
-							"</strong></p>";
+							fmtMoney(o.total != null ? o.total : 0) +
+							"</strong> · " +
+							t("js.orders.vat_total") +
+							": " +
+							fmtMoney(o.vat_total != null ? o.vat_total : 0) +
+							"</p>";
 						return (
 							'<div class="panel__card" data-order-id="' +
 							o.id +
@@ -492,6 +510,15 @@
 				costForm.elements.namedItem("line_id").value = el.getAttribute("data-line-id");
 				costForm.elements.namedItem("cost_price").value = el.getAttribute("data-cost") || "0";
 				costDialog.showModal();
+			}
+			if (el.getAttribute("data-action") === "order-line-vat") {
+				if (!canManage) {
+					return;
+				}
+				vatForm.elements.namedItem("order_id").value = el.getAttribute("data-order-id");
+				vatForm.elements.namedItem("line_id").value = el.getAttribute("data-line-id");
+				vatForm.elements.namedItem("vat_rate").value = el.getAttribute("data-vat") || "0";
+				vatDialog.showModal();
 			}
 			if (el.getAttribute("data-action") === "order-status") {
 				const status = el.getAttribute("data-status");
@@ -665,6 +692,30 @@
 					{
 						method: "PATCH",
 						body: JSON.stringify({ cost_price: costPrice }),
+					}
+				);
+				refresh();
+			} catch (e) {
+				await appInfo({ title: noticeTitle(), message: e.message });
+			}
+		});
+
+		vatDialog.addEventListener("close", async () => {
+			if (vatDialog.returnValue !== "save") {
+				return;
+			}
+			const fd = new FormData(vatForm);
+			const vatRate = parseFloat(fd.get("vat_rate"));
+			if (Number.isNaN(vatRate) || vatRate < 0 || vatRate > 100) {
+				await appInfo({ title: noticeTitle(), message: t("js.orders.vat_invalid") });
+				return;
+			}
+			try {
+				await api(
+					"/api/inventory/orders/" + fd.get("order_id") + "/lines/" + fd.get("line_id"),
+					{
+						method: "PATCH",
+						body: JSON.stringify({ vat_rate: vatRate }),
 					}
 				);
 				refresh();
