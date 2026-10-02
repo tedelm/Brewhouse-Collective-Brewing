@@ -133,21 +133,15 @@
 								orderQty +
 								unit +
 								" · " +
-								costPrice +
-								" " +
-								currencyCode() +
+								fmtMoney(costPrice) +
 								"/unit · line " +
-								lineCost +
-								" " +
-								currencyCode() +
+								fmtMoney(lineCost) +
 								" · " +
 								t("js.orders.vat") +
 								" " +
 								vatRate +
 								"% = " +
-								vatAmount +
-								" " +
-								currencyCode();
+								fmtMoney(vatAmount);
 							if (canEditLines) {
 								text +=
 									' <button type="button" class="btn btn--small" data-action="order-line-ordered-qty" data-order-id="' +
@@ -379,15 +373,11 @@
 							'<p class="order-total"><strong>' +
 							t("js.orders.total") +
 							": " +
-							(o.total != null ? o.total : 0) +
-							" " +
-							currencyCode() +
+							fmtMoney(o.total != null ? o.total : 0) +
 							"</strong> · " +
 							t("js.orders.vat_total") +
 							": " +
-							(o.vat_total != null ? o.vat_total : 0) +
-							" " +
-							currencyCode() +
+							fmtMoney(o.vat_total != null ? o.vat_total : 0) +
 							"</p>";
 						return (
 							'<div class="panel__card" data-order-id="' +

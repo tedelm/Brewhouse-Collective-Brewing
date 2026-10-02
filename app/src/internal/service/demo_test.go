@@ -36,7 +36,7 @@ func demoTestStack(t *testing.T) (
 }
 
 func TestSeedDemoIfNeeded_CreatesPipelineAndSkipsSecondRun(t *testing.T) {
-	demo, users, breweries, recipes, settings, _ := demoTestStack(t)
+	demo, users, breweries, recipes, settings, inventory := demoTestStack(t)
 	admin := ensureAdminActor(t, users)
 
 	seeded, err := demo.SeedDemoIfNeeded(admin)
@@ -116,6 +116,30 @@ func TestSeedDemoIfNeeded_CreatesPipelineAndSkipsSecondRun(t *testing.T) {
 		t.Fatal("expected delivered_at on Nordic Pilsner")
 	}
 
+	orders, err := inventory.ListOrders()
+	if err != nil {
+		t.Fatalf("list orders: %v", err)
+	}
+	var demoOrder *service.InventoryOrder
+	for i := range orders {
+		o := &orders[i]
+		if o.Status == service.OrderStatusPlanning && o.Notes == "Demo wishlist" {
+			demoOrder = o
+			break
+		}
+	}
+	if demoOrder == nil {
+		t.Fatal("expected Demo wishlist planning order")
+	}
+	if len(demoOrder.Lines) != 3 {
+		t.Fatalf("expected 3 demo order lines, got %d", len(demoOrder.Lines))
+	}
+	for _, line := range demoOrder.Lines {
+		if line.BreweryID == nil || *line.BreweryID != list[0].ID {
+			t.Fatalf("expected demo brewery on order line, got %+v", line)
+		}
+	}
+
 	seededAgain, err := demo.SeedDemoIfNeeded(admin)
 	if err != nil {
 		t.Fatalf("second seed: %v", err)
@@ -158,8 +182,30 @@ func TestPurgeDemo_RemovesDemoAndDoesNotReseed(t *testing.T) {
 	if _, err := demo.SeedDemoIfNeeded(admin); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
+
+	brews, err := breweries.List(admin)
+	if err != nil || len(brews) != 1 {
+		t.Fatalf("expected 1 demo brewery before purge, got %+v err=%v", brews, err)
+	}
+	demoBreweryID := brews[0].ID
+
 	if err := demo.PurgeDemo(admin); err != nil {
 		t.Fatalf("purge: %v", err)
+	}
+
+	orders, err := inventory.ListOrders()
+	if err != nil {
+		t.Fatalf("list orders after purge: %v", err)
+	}
+	for _, o := range orders {
+		for _, line := range o.Lines {
+			if line.BreweryID != nil && *line.BreweryID == demoBreweryID {
+				t.Fatalf("demo order line still present after purge: order=%d line=%+v", o.ID, line)
+			}
+		}
+		if o.Notes == "Demo wishlist" {
+			t.Fatalf("demo order %d still present after purge", o.ID)
+		}
 	}
 
 	if got := itemQty(service.CategoryMalt, "Extra Pale Premium Pilsner Malt"); got != maltBefore {

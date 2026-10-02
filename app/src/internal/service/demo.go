@@ -137,6 +137,15 @@ func (s *DemoService) PurgeDemo(actor Actor) error {
 	}
 
 	for _, breweryID := range breweryIDs {
+		if _, err := s.db.Exec(
+			`DELETE FROM inventory_orders
+			 WHERE id IN (
+			   SELECT DISTINCT order_id FROM inventory_order_lines WHERE brewery_id = ?
+			 )`,
+			breweryID,
+		); err != nil {
+			return fmt.Errorf("delete demo orders for brewery %d: %w", breweryID, err)
+		}
 		recipeRows, err := s.db.Query(`SELECT id FROM recipes WHERE brewery_id = ?`, breweryID)
 		if err != nil {
 			return fmt.Errorf("list demo recipes: %w", err)
@@ -305,6 +314,15 @@ func (s *DemoService) seedDemo(actor Actor) error {
 		if _, err := s.recipes.Deliver(actor, id); err != nil {
 			return fmt.Errorf("deliver %q: %w", b.name, err)
 		}
+	}
+
+	breweryID := brewery.ID
+	if _, err := s.inventory.CreateOrder(actor, "Demo wishlist", "", []OrderLineInput{
+		{InventoryItemID: malt.ID, Qty: 25, BreweryID: &breweryID},
+		{InventoryItemID: hops.ID, Qty: 500, BreweryID: &breweryID},
+		{InventoryItemID: yeast.ID, Qty: 2, BreweryID: &breweryID},
+	}); err != nil {
+		return fmt.Errorf("create demo order: %w", err)
 	}
 	return nil
 }

@@ -86,6 +86,7 @@ ABV, alcohol tax, extract, dilution, yeast pitch, and CO₂ carbonation:
 Tax and VAT for the active jurisdiction; sidebar also includes Monthly deliveries and Purchase costs:
 
 ![Economy](doc/img/economy.png)
+![Economy](doc/img/economy_purchase.png)
 
 ### IAM
 
