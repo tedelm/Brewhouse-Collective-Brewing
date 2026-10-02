@@ -19,6 +19,8 @@
 		categoryText,
 		syncRegionalFromServer,
 		fmtSG,
+		toSG,
+		applyGravityInputs,
 		datePart,
 		recipeABV,
 		appConfirm,
@@ -67,6 +69,10 @@
 			return parseFloat(form.querySelector('[name="' + name + '"]').value);
 		}
 
+		function gravitySG(form, name) {
+			return toSG(form.querySelector('[name="' + name + '"]').value);
+		}
+
 		function fmtG(g) {
 			return (Math.round(g * 10) / 10).toFixed(1) + " g";
 		}
@@ -82,8 +88,8 @@
 		function updateABV() {
 			const form = panel.querySelector("#calc-abv-form");
 			const out = panel.querySelector("#calc-abv-result");
-			const og = num(form, "og");
-			const fg = num(form, "fg");
+			const og = gravitySG(form, "og");
+			const fg = gravitySG(form, "fg");
 			if (Number.isNaN(og) || Number.isNaN(fg)) {
 				out.textContent = "—";
 				return;
@@ -93,8 +99,8 @@
 
 		function updateTax() {
 			const form = panel.querySelector("#calc-tax-form");
-			const og = num(form, "og");
-			const fg = num(form, "fg");
+			const og = gravitySG(form, "og");
+			const fg = gravitySG(form, "fg");
 			const vol = num(form, "volume");
 			const abvEl = panel.querySelector("#calc-tax-abv");
 			const perEl = panel.querySelector("#calc-tax-per-l");
@@ -456,6 +462,16 @@
 			}
 		}
 
+		applyGravityInputs(panel);
+		const defs = window.BrewhouseCore.gravityInputDefaults
+			? window.BrewhouseCore.gravityInputDefaults()
+			: { og: "1.050", fg: "1.010" };
+		panel.querySelectorAll('[data-gravity-input="og"]').forEach((el) => {
+			el.value = defs.og;
+		});
+		panel.querySelectorAll('[data-gravity-input="fg"]').forEach((el) => {
+			el.value = defs.fg;
+		});
 		refreshAll();
 	}
 

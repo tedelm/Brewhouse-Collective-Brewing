@@ -156,7 +156,7 @@
   "settings.beer_price.lead": "Domyślne netto piwa {currency}/L wstępnie wypełniające formularz Dostawy. Mnożnik jest stosowany dodatkowo przy obliczaniu netto.",
   "settings.beer_price.min_net": "Min. netto {currency}/L",
   "settings.regional.title": "Regionalne",
-  "settings.regional.lead": "Currency, language, and tax jurisdiction used across the app.",
+  "settings.regional.lead": "Currency, language, tax jurisdiction, and gravity unit used across the app.",
   "settings.regional.currency": "Waluta",
   "settings.regional.language": "Język",
   "settings.hygiene.title": "Rutyny higieniczne",
@@ -340,7 +340,7 @@
   "guide.settings.multipliers": "Opcje skalujące netto piwa {currency}/L przy dostawie.",
   "guide.settings.suppliers": "Dostawcy i procentowe korekty stosowane do ceny zakupu w magazynie.",
   "guide.settings.beer_price": "Domyślne {currency}/L wstępnie wypełniające formularz Dostawy.",
-  "guide.settings.regional": "Currency, language, and tax jurisdiction used across the app.",
+  "guide.settings.regional": "Currency, language, tax jurisdiction, and gravity unit used across the app.",
   "guide.settings.hygiene": "Główna lista kontrolna używana przy potwierdzaniu higieny.",
   "guide.settings.backup": "Nocne kopie zapasowe bazy o 01:00, pobieranie i przywracanie.",
   "tools.title": "Kalkulatory",
@@ -758,5 +758,13 @@
   "economy.tax.discount_fr_50": "France ≤200 000 hl — 50%",
   "economy.tax.discount_pl_50": "Poland ≤200 000 hl — 50%",
   "js.tools.tax_config_country": "Jurisdiction {country} · basis {basis} · discount {discount}",
-  "js.economy.examples_lead_country": "Examples for {country} at current settings:"
+  "js.economy.examples_lead_country": "Examples for {country} at current settings:",
+  "js.economy.col.currency": "Waluta",
+  "settings.regional.gravity_unit": "Gravity unit",
+  "settings.regional.gravity_sg": "Specific gravity (SG)",
+  "settings.regional.gravity_plato": "°Plato",
+  "brewday.og_plato": "OG (°Plato)",
+  "delivery.fg_plato": "FG (°Plato)",
+  "common.og_plato": "OG (°P)",
+  "common.fg_plato": "FG (°P)"
 }

@@ -66,6 +66,23 @@ func PlatoFromSG(sg float64) float64 {
 	return -616.868 + 1111.14*sg - 630.272*sg*sg + 135.997*sg*sg*sg
 }
 
+// SGFromPlato converts °Plato to specific gravity by inverting PlatoFromSG.
+func SGFromPlato(plato float64) float64 {
+	if plato <= 0 {
+		return 1.0
+	}
+	lo, hi := 1.0, 1.25
+	for i := 0; i < 64; i++ {
+		mid := (lo + hi) / 2
+		if PlatoFromSG(mid) < plato {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return (lo + hi) / 2
+}
+
 // ValidCountry reports whether country is a supported tax jurisdiction.
 func ValidCountry(country string) bool {
 	switch country {

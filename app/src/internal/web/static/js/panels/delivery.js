@@ -19,6 +19,9 @@
 		categoryText,
 		syncRegionalFromServer,
 		fmtSG,
+		fmtGravity,
+		toSG,
+		applyGravityInputs,
 		datePart,
 		recipeABV,
 		appConfirm,
@@ -59,7 +62,10 @@
 		let previewCostTotal = 0;
 
 		function fillFG(recipe) {
-			fgInput.value = fmtSG(recipe && recipe.fg, "1.010");
+			const defs = window.BrewhouseCore.gravityInputDefaults
+				? window.BrewhouseCore.gravityInputDefaults()
+				: { fg: "1.010" };
+			fgInput.value = fmtGravity(recipe && recipe.fg, defs.fg);
 		}
 
 		function clearPreview() {
@@ -83,7 +89,7 @@
 
 		function updatePreview() {
 			const og = previewOG;
-			const fg = parseFloat(fgInput.value);
+			const fg = toSG(fgInput.value);
 			const vol = parseFloat(volInput.value);
 			const beerNet = parseFloat(beerNetInput.value);
 			const mult = selectedMultiplier();
@@ -238,8 +244,9 @@
 									'">' + esc(t("js.delivery.revoke")) + "</button>";
 							}
 							const hasCostNet = r.cost != null && r.net != null;
+							const cur = r.currency_code || "SEK";
 							const profit = hasCostNet
-								? fmtMoney((Number(r.net) || 0) - (Number(r.cost) || 0))
+								? fmtMoney((Number(r.net) || 0) - (Number(r.cost) || 0), cur)
 								: "—";
 							return (
 								"<tr><td>" +
@@ -257,11 +264,11 @@
 								"</td><td>" +
 								esc(recipeABV(r)) +
 								"</td><td>" +
-								fmtMoney(r.cost) +
+								fmtMoney(r.cost, cur) +
 								"</td><td>" +
-								fmtMoney(r.tax) +
+								fmtMoney(r.tax, cur) +
 								"</td><td>" +
-								fmtMoney(r.net) +
+								fmtMoney(r.net, cur) +
 								"</td><td>" +
 								profit +
 								"</td><td>" +
@@ -329,7 +336,7 @@
 				await api("/api/recipes/" + fd.get("recipe_id") + "/delivery", {
 					method: "POST",
 					body: JSON.stringify({
-						fg: parseFloat(fd.get("fg")),
+						fg: toSG(fd.get("fg")),
 						delivery_volume: parseFloat(fd.get("delivery_volume")),
 						beer_net_sek_per_liter: parseFloat(fd.get("beer_net_sek_per_liter")),
 						multiplier_id: parseInt(fd.get("multiplier_id"), 10),
@@ -347,6 +354,13 @@
 		} catch (e) {
 			errEl.hidden = false;
 			errEl.textContent = e.message;
+		}
+		applyGravityInputs(panel);
+		const defs = window.BrewhouseCore.gravityInputDefaults
+			? window.BrewhouseCore.gravityInputDefaults()
+			: { fg: "1.010" };
+		if (!recipeSel.value) {
+			fgInput.value = defs.fg;
 		}
 		refresh();
 	}

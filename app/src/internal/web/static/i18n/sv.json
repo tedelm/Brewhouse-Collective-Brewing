@@ -156,7 +156,7 @@
   "settings.beer_price.lead": "Standard ölnetto {currency}/L som förifyller leveransformuläret. Multiplikator tillämpas ovanpå vid nettoberäkning.",
   "settings.beer_price.min_net": "Min netto {currency}/L",
   "settings.regional.title": "Regionalt",
-  "settings.regional.lead": "Valuta, språk och skatteregim som används i hela appen.",
+  "settings.regional.lead": "Valuta, språk, skatteregim och gravitetenhet som används i hela appen.",
   "settings.regional.currency": "Valuta",
   "settings.regional.language": "Språk",
   "settings.hygiene.title": "Hygienrutiner",
@@ -340,7 +340,7 @@
   "guide.settings.multipliers": "Alternativ som skalar ölnetto {currency}/L vid leverans.",
   "guide.settings.suppliers": "Leverantörer och procentjusteringar som tillämpas på lagerkostnadspris.",
   "guide.settings.beer_price": "Standard {currency}/L som förifyller leveransformuläret.",
-  "guide.settings.regional": "Valuta, språk och skatteregim som används i hela appen.",
+  "guide.settings.regional": "Valuta, språk, skatteregim och gravitetenhet som används i hela appen.",
   "guide.settings.hygiene": "Huvudchecklista som används vid hygienbekräftelse.",
   "guide.settings.backup": "Nattliga databassäkerhetskopior kl. 01:00, nedladdning och återställning.",
   "tools.title": "Kalkylatorer",
@@ -758,5 +758,13 @@
   "economy.tax.discount_fr_50": "France ≤200 000 hl — 50%",
   "economy.tax.discount_pl_50": "Poland ≤200 000 hl — 50%",
   "js.tools.tax_config_country": "Regim {country} · basis {basis} · rabatt {discount}",
-  "js.economy.examples_lead_country": "Exempel för {country} med aktuella inställningar:"
+  "js.economy.examples_lead_country": "Exempel för {country} med aktuella inställningar:",
+  "js.economy.col.currency": "Valuta",
+  "settings.regional.gravity_unit": "Gravitetenhet",
+  "settings.regional.gravity_sg": "Specifik vikt (SG)",
+  "settings.regional.gravity_plato": "°Plato",
+  "brewday.og_plato": "OG (°Plato)",
+  "delivery.fg_plato": "FG (°Plato)",
+  "common.og_plato": "OG (°P)",
+  "common.fg_plato": "FG (°P)"
 }

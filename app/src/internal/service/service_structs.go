@@ -235,11 +235,12 @@ type BrandColorConfig struct {
 	LogoBgHex string `json:"logo_bg_hex"`
 }
 
-// RegionalConfig holds display currency, UI language, and tax jurisdiction.
+// RegionalConfig holds display currency, UI language, tax jurisdiction, and gravity unit.
 type RegionalConfig struct {
 	CurrencyCode string `json:"currency_code"`
 	Language     string `json:"language"`
 	TaxCountry   string `json:"tax_country"`
+	GravityUnit  string `json:"gravity_unit"`
 }
 
 // PriceMultiplier scales (cost+tax) to net price.
@@ -287,6 +288,7 @@ type Recipe struct {
 	Cost             *float64           `json:"cost,omitempty"`
 	Tax              *float64           `json:"tax,omitempty"`
 	Net              *float64           `json:"net,omitempty"`
+	CurrencyCode     string             `json:"currency_code,omitempty"`
 	CreatedBy        *int64             `json:"created_by,omitempty"`
 	CreatedAt        string             `json:"created_at"`
 	DeliveredAt      *string            `json:"delivered_at,omitempty"`

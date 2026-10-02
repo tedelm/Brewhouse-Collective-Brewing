@@ -716,6 +716,9 @@ func TestDelivery_NetIsBeerNetTimesMult(t *testing.T) {
 	if *recipe.Tax == 0 {
 		t.Fatal("expected nonzero tax stored separately from net")
 	}
+	if recipe.CurrencyCode != "SEK" {
+		t.Fatalf("expected currency_code SEK, got %q", recipe.CurrencyCode)
+	}
 }
 
 func TestDelivery_HigherMultiplierRaisesNet(t *testing.T) {

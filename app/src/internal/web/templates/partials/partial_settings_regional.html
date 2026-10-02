@@ -1,7 +1,7 @@
 <section class="panel" data-panel="settings-regional">
 	<header class="panel__header">
 		<h1 class="panel__title" data-i18n="settings.regional.title">Regional</h1>
-		<p class="panel__lead" data-i18n="settings.regional.lead">Currency, language, and tax jurisdiction used across the app.</p>
+		<p class="panel__lead" data-i18n="settings.regional.lead">Currency, language, tax jurisdiction, and gravity unit used across the app.</p>
 	</header>
 	<form class="panel__form" id="settings-regional-form">
 		<label>
@@ -40,6 +40,13 @@
 				<option value="es" data-i18n="settings.regional.tax_es">Spain</option>
 				<option value="fr" data-i18n="settings.regional.tax_fr">France</option>
 				<option value="pl" data-i18n="settings.regional.tax_pl">Poland</option>
+			</select>
+		</label>
+		<label>
+			<span data-i18n="settings.regional.gravity_unit">Gravity unit</span>
+			<select name="gravity_unit" id="settings-regional-gravity" required>
+				<option value="sg" data-i18n="settings.regional.gravity_sg">Specific gravity (SG)</option>
+				<option value="plato" data-i18n="settings.regional.gravity_plato">°Plato</option>
 			</select>
 		</label>
 		<button type="submit" class="btn btn--primary" data-i18n="common.save">Save</button>

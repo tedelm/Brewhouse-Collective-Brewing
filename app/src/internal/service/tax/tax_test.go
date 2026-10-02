@@ -30,6 +30,16 @@ func TestPlatoFromSG_TwelvePlatoApprox(t *testing.T) {
 	}
 }
 
+func TestSGFromPlato_RoundTrip(t *testing.T) {
+	for _, sg := range []float64{1.000, 1.010, 1.048, 1.080, 1.100} {
+		p := tax.PlatoFromSG(sg)
+		back := tax.SGFromPlato(p)
+		if math.Abs(back-sg) > 1e-5 {
+			t.Fatalf("round-trip sg=%v plato=%v back=%v", sg, p, back)
+		}
+	}
+}
+
 func TestCalculate_Sweden(t *testing.T) {
 	r, err := tax.Calculate(profile(tax.CountrySV, "full"), tax.Input{ABV: 2.8, VolumeL: 1})
 	if err != nil {

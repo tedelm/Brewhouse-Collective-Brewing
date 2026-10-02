@@ -459,14 +459,14 @@ func (s *SettingsService) UpdateAlcoholTaxConfigLegacy(actor Actor, rateSEK, fre
 	return s.UpdateAlcoholTaxConfig(actor, params, key)
 }
 
-// GetRegionalConfig returns display currency, language, and tax country (defaults SEK/en/sv).
+// GetRegionalConfig returns display currency, language, tax country, and gravity unit.
 func (s *SettingsService) GetRegionalConfig() (*RegionalConfig, error) {
 	cfg := &RegionalConfig{}
 	err := s.db.QueryRow(
-		`SELECT currency_code, language, tax_country FROM regional_config WHERE id = 1`,
-	).Scan(&cfg.CurrencyCode, &cfg.Language, &cfg.TaxCountry)
+		`SELECT currency_code, language, tax_country, gravity_unit FROM regional_config WHERE id = 1`,
+	).Scan(&cfg.CurrencyCode, &cfg.Language, &cfg.TaxCountry, &cfg.GravityUnit)
 	if errors.Is(err, sql.ErrNoRows) {
-		return &RegionalConfig{CurrencyCode: "SEK", Language: "en", TaxCountry: tax.CountrySV}, nil
+		return &RegionalConfig{CurrencyCode: "SEK", Language: "en", TaxCountry: tax.CountrySV, GravityUnit: "sg"}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get regional config: %w", err)
@@ -474,19 +474,26 @@ func (s *SettingsService) GetRegionalConfig() (*RegionalConfig, error) {
 	if cfg.TaxCountry == "" {
 		cfg.TaxCountry = tax.CountrySV
 	}
+	if cfg.GravityUnit == "" {
+		cfg.GravityUnit = "sg"
+	}
 	return cfg, nil
 }
 
-// UpdateRegionalConfig updates display currency, language, and tax jurisdiction.
-func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, language, taxCountry string) (*RegionalConfig, error) {
+// UpdateRegionalConfig updates display currency, language, tax jurisdiction, and gravity unit.
+func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, language, taxCountry, gravityUnit string) (*RegionalConfig, error) {
 	if err := s.requireAdmin(actor); err != nil {
 		return nil, err
 	}
 	currencyCode = strings.ToUpper(strings.TrimSpace(currencyCode))
 	language = strings.ToLower(strings.TrimSpace(language))
 	taxCountry = strings.ToLower(strings.TrimSpace(taxCountry))
+	gravityUnit = strings.ToLower(strings.TrimSpace(gravityUnit))
 	if taxCountry == "" {
 		taxCountry = tax.CountrySV
+	}
+	if gravityUnit == "" {
+		gravityUnit = "sg"
 	}
 	if _, ok := supportedRegionalCurrencies[currencyCode]; !ok {
 		return nil, fmt.Errorf("currency_code must be SEK, EUR, USD, NOK, DKK, or PLN")
@@ -497,10 +504,13 @@ func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, langua
 	if !tax.ValidCountry(taxCountry) {
 		return nil, fmt.Errorf("tax_country must be one of sv, nb, da, fi, de, es, fr, pl")
 	}
+	if gravityUnit != "sg" && gravityUnit != "plato" {
+		return nil, fmt.Errorf("gravity_unit must be sg or plato")
+	}
 	_, err := s.db.Exec(
-		`INSERT INTO regional_config (id, currency_code, language, tax_country) VALUES (1, ?, ?, ?)
-		 ON CONFLICT(id) DO UPDATE SET currency_code = excluded.currency_code, language = excluded.language, tax_country = excluded.tax_country`,
-		currencyCode, language, taxCountry,
+		`INSERT INTO regional_config (id, currency_code, language, tax_country, gravity_unit) VALUES (1, ?, ?, ?, ?)
+		 ON CONFLICT(id) DO UPDATE SET currency_code = excluded.currency_code, language = excluded.language, tax_country = excluded.tax_country, gravity_unit = excluded.gravity_unit`,
+		currencyCode, language, taxCountry, gravityUnit,
 	)
 	if err != nil {
 		return nil, err

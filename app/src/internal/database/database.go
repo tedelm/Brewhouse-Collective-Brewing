@@ -150,7 +150,8 @@ func migrate(db *sql.DB) error {
 			id INTEGER PRIMARY KEY CHECK (id = 1),
 			currency_code TEXT NOT NULL,
 			language TEXT NOT NULL,
-			tax_country TEXT NOT NULL DEFAULT 'sv'
+			tax_country TEXT NOT NULL DEFAULT 'sv',
+			gravity_unit TEXT NOT NULL DEFAULT 'sg'
 		)`,
 		`CREATE TABLE IF NOT EXISTS price_multipliers (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -178,6 +179,7 @@ func migrate(db *sql.DB) error {
 			cost REAL,
 			tax REAL,
 			net REAL,
+			currency_code TEXT NOT NULL DEFAULT '',
 			created_by INTEGER,
 			created_at TEXT NOT NULL,
 			delivered_at TEXT,
@@ -301,6 +303,9 @@ func migrate(db *sql.DB) error {
 	if err := ensureRecipeActiveColumn(db); err != nil {
 		return fmt.Errorf("ensure recipes.active: %w", err)
 	}
+	if err := ensureRecipeCurrencyColumn(db); err != nil {
+		return fmt.Errorf("ensure recipes.currency_code: %w", err)
+	}
 	if err := ensureBreweryInstagramColumn(db); err != nil {
 		return fmt.Errorf("ensure breweries.instagram: %w", err)
 	}
@@ -312,6 +317,9 @@ func migrate(db *sql.DB) error {
 	}
 	if err := ensureRegionalTaxCountry(db); err != nil {
 		return fmt.Errorf("ensure regional tax_country: %w", err)
+	}
+	if err := ensureRegionalGravityUnit(db); err != nil {
+		return fmt.Errorf("ensure regional gravity_unit: %w", err)
 	}
 
 	if err := seedDefaults(db); err != nil {
@@ -408,6 +416,25 @@ func ensureTankAndMultiplierActiveColumns(db *sql.DB) error {
 func ensureRecipeActiveColumn(db *sql.DB) error {
 	return addColumnIfMissing(db, "recipes", "active",
 		`ALTER TABLE recipes ADD COLUMN active INTEGER NOT NULL DEFAULT 1`)
+}
+
+// ensureRecipeCurrencyColumn stamps currency on priced deliveries for display after regional changes.
+func ensureRecipeCurrencyColumn(db *sql.DB) error {
+	if err := addColumnIfMissing(db, "recipes", "currency_code",
+		`ALTER TABLE recipes ADD COLUMN currency_code TEXT NOT NULL DEFAULT ''`); err != nil {
+		return err
+	}
+	var code string
+	err := db.QueryRow(`SELECT currency_code FROM regional_config WHERE id = 1`).Scan(&code)
+	if err != nil || code == "" {
+		code = "SEK"
+	}
+	_, err = db.Exec(
+		`UPDATE recipes SET currency_code = ?
+		 WHERE currency_code = '' AND (cost IS NOT NULL OR tax IS NOT NULL OR net IS NOT NULL)`,
+		code,
+	)
+	return err
 }
 
 func ensureBreweryInstagramColumn(db *sql.DB) error {
@@ -630,6 +657,12 @@ func ensureRegionalTaxCountry(db *sql.DB) error {
 		`ALTER TABLE regional_config ADD COLUMN tax_country TEXT NOT NULL DEFAULT 'sv'`)
 }
 
+// ensureRegionalGravityUnit adds SG/°Plato display-and-input preference.
+func ensureRegionalGravityUnit(db *sql.DB) error {
+	return addColumnIfMissing(db, "regional_config", "gravity_unit",
+		`ALTER TABLE regional_config ADD COLUMN gravity_unit TEXT NOT NULL DEFAULT 'sg'`)
+}
+
 // migrateAlcoholTaxConfig rebuilds legacy singleton Swedish rows into per-country profiles.
 func migrateAlcoholTaxConfig(db *sql.DB) error {
 	ok, err := columnExists(db, "alcohol_tax_config", "country")
@@ -752,7 +785,7 @@ func seedDefaults(db *sql.DB) error {
 	}
 	if count == 0 {
 		if _, err := db.Exec(
-			`INSERT INTO regional_config (id, currency_code, language, tax_country) VALUES (1, 'SEK', 'en', 'sv')`,
+			`INSERT INTO regional_config (id, currency_code, language, tax_country, gravity_unit) VALUES (1, 'SEK', 'en', 'sv', 'sg')`,
 		); err != nil {
 			return err
 		}

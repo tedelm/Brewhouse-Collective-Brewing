@@ -154,9 +154,9 @@ func (s *RecipeService) CountByStatuses(statuses ...string) (int, error) {
 	return n, nil
 }
 
-const recipeColumns = `id, brewery_id, name, status, booked_date, tank_id, og, fg, brew_volume, delivery_volume, cost, tax, net, created_by, created_at, delivered_at, active`
+const recipeColumns = `id, brewery_id, name, status, booked_date, tank_id, og, fg, brew_volume, delivery_volume, cost, tax, net, currency_code, created_by, created_at, delivered_at, active`
 
-const recipeColumnsAliased = `r.id, r.brewery_id, r.name, r.status, r.booked_date, r.tank_id, r.og, r.fg, r.brew_volume, r.delivery_volume, r.cost, r.tax, r.net, r.created_by, r.created_at, r.delivered_at, r.active`
+const recipeColumnsAliased = `r.id, r.brewery_id, r.name, r.status, r.booked_date, r.tank_id, r.og, r.fg, r.brew_volume, r.delivery_volume, r.cost, r.tax, r.net, r.currency_code, r.created_by, r.created_at, r.delivered_at, r.active`
 
 func (s *RecipeService) queryRecipes(query string, args ...any) ([]Recipe, error) {
 	rows, err := s.db.Query(query, args...)
@@ -258,14 +258,14 @@ type scannable interface {
 
 func scanRecipe(row scannable) (*Recipe, error) {
 	r := &Recipe{}
-	var bookedDate, deliveredAt sql.NullString
+	var bookedDate, deliveredAt, currencyCode sql.NullString
 	var tankID, createdBy sql.NullInt64
 	var og, fg, brewVol, delVol, cost, tax, net sql.NullFloat64
 	var active int
 	err := row.Scan(
 		&r.ID, &r.BreweryID, &r.Name, &r.Status,
 		&bookedDate, &tankID, &og, &fg, &brewVol, &delVol, &cost, &tax, &net,
-		&createdBy, &r.CreatedAt, &deliveredAt, &active,
+		&currencyCode, &createdBy, &r.CreatedAt, &deliveredAt, &active,
 	)
 	if err != nil {
 		return nil, err
@@ -305,6 +305,9 @@ func scanRecipe(row scannable) (*Recipe, error) {
 	if net.Valid {
 		v := net.Float64
 		r.Net = &v
+	}
+	if currencyCode.Valid {
+		r.CurrencyCode = currencyCode.String
 	}
 	if createdBy.Valid {
 		v := createdBy.Int64
@@ -910,9 +913,14 @@ func (s *RecipeService) SetDelivery(actor Actor, id int64, fg, deliveryVolume, b
 	}
 	net := beerNetSEKPerLiter * mult.Multiplier * deliveryVolume
 
+	currencyCode := "SEK"
+	if regional, err := s.settings.GetRegionalConfig(); err == nil && regional.CurrencyCode != "" {
+		currencyCode = regional.CurrencyCode
+	}
+
 	_, err = s.db.Exec(
-		`UPDATE recipes SET fg = ?, delivery_volume = ?, cost = ?, tax = ?, net = ?, status = ? WHERE id = ?`,
-		fg, deliveryVolume, cost, tax, net, StatusReadyForDelivery, id,
+		`UPDATE recipes SET fg = ?, delivery_volume = ?, cost = ?, tax = ?, net = ?, currency_code = ?, status = ? WHERE id = ?`,
+		fg, deliveryVolume, cost, tax, net, currencyCode, StatusReadyForDelivery, id,
 	)
 	if err != nil {
 		return nil, err
@@ -950,7 +958,7 @@ func (s *RecipeService) RevokeDelivery(actor Actor, id int64) (*Recipe, error) {
 		return nil, ErrInvalidStatus
 	}
 	_, err = s.db.Exec(
-		`UPDATE recipes SET status = ?, fg = NULL, delivery_volume = NULL, cost = NULL, tax = NULL, net = NULL, delivered_at = NULL, active = 1 WHERE id = ?`,
+		`UPDATE recipes SET status = ?, fg = NULL, delivery_volume = NULL, cost = NULL, tax = NULL, net = NULL, currency_code = '', delivered_at = NULL, active = 1 WHERE id = ?`,
 		StatusHygieneDone, id,
 	)
 	if err != nil {

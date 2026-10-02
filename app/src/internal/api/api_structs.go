@@ -253,11 +253,12 @@ type BeerPriceRequest struct {
 	MinNetSEKPerLiter float64 `json:"min_net_sek_per_liter"`
 }
 
-// RegionalRequest is update for display currency, UI language, and tax jurisdiction.
+// RegionalRequest is update for display currency, UI language, tax jurisdiction, and gravity unit.
 type RegionalRequest struct {
 	CurrencyCode string `json:"currency_code"`
 	Language     string `json:"language"`
 	TaxCountry   string `json:"tax_country"`
+	GravityUnit  string `json:"gravity_unit"`
 }
 
 // HygieneRoutineRequest is create/update for hygiene routines.

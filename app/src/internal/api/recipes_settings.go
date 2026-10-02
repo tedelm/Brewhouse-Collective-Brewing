@@ -714,7 +714,7 @@ func (h *Handler) settingsRegional(w http.ResponseWriter, r *http.Request, actor
 			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 			return
 		}
-		cfg, err := h.settings.UpdateRegionalConfig(actor, req.CurrencyCode, req.Language, req.TaxCountry)
+		cfg, err := h.settings.UpdateRegionalConfig(actor, req.CurrencyCode, req.Language, req.TaxCountry, req.GravityUnit)
 		if err != nil {
 			if errors.Is(err, service.ErrForbidden) {
 				h.writeErr(w, err)

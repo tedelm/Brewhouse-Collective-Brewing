@@ -64,7 +64,7 @@ func TestTaxCountry_NorwaySwitch(t *testing.T) {
 	_, users, _, _, settings, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	if _, err := settings.UpdateRegionalConfig(admin, "NOK", "nb", "nb"); err != nil {
+	if _, err := settings.UpdateRegionalConfig(admin, "NOK", "nb", "nb", "sg"); err != nil {
 		t.Fatalf("regional: %v", err)
 	}
 	preview, err := settings.TaxPreview(5.0, 1.048, 1)
