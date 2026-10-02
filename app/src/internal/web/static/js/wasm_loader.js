@@ -281,6 +281,9 @@
 		document.querySelectorAll("[data-nav-economy-deliveries]").forEach((el) => {
 			el.classList.toggle("is-role-hidden", !show);
 		});
+		document.querySelectorAll("[data-nav-economy-purchases]").forEach((el) => {
+			el.classList.toggle("is-role-hidden", !show);
+		});
 	}
 
 	async function refreshEconomyAccess() {
@@ -671,6 +674,10 @@
 			return;
 		}
 		if (kind === "economy-deliveries" && !canViewEconomy()) {
+			showHome();
+			return;
+		}
+		if (kind === "economy-purchases" && !canViewEconomy()) {
 			showHome();
 		}
 	}

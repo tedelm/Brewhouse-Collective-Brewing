@@ -429,6 +429,8 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		h.settingsVATConfig(w, r, actor, parts[1:])
 	case "purchase-vat":
 		h.settingsPurchaseVAT(w, r, actor, parts[1:])
+	case "purchase-costs":
+		h.settingsPurchaseCosts(w, r, actor, parts[1:])
 	case "tax-preview":
 		h.settingsTaxPreview(w, r, actor, parts[1:])
 	case "multipliers":
@@ -694,6 +696,28 @@ func (h *Handler) settingsPurchaseVAT(w http.ResponseWriter, r *http.Request, ac
 		return
 	}
 	writeJSON(w, http.StatusOK, sum)
+}
+
+func (h *Handler) settingsPurchaseCosts(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if len(parts) != 0 {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+		return
+	}
+	month := r.URL.Query().Get("month")
+	if month == "" {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "month required"})
+		return
+	}
+	report, err := h.settings.ListPurchaseCostsForMonth(actor, month)
+	if err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, report)
 }
 
 func (h *Handler) settingsTaxPreview(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {

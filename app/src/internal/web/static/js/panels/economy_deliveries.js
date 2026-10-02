@@ -47,8 +47,6 @@
 		const sumNet = panel.querySelector("#economy-deliveries-sum-net");
 		const sumVAT = panel.querySelector("#economy-deliveries-sum-vat");
 		const sumProfit = panel.querySelector("#economy-deliveries-sum-profit");
-		const vatSalesTotal = panel.querySelector("#economy-vat-sales-total");
-		const vatPurchaseTotal = panel.querySelector("#economy-vat-purchase-total");
 		let rows = [];
 
 		const columnHelp = {
@@ -166,7 +164,7 @@
 				.join(" · ");
 		}
 
-		function setSummary(totalsByCurrency, purchaseVAT) {
+		function setSummary(totalsByCurrency) {
 			if (!totalsByCurrency) {
 				sumVol.textContent = "—";
 				sumCost.textContent = "—";
@@ -176,12 +174,6 @@
 					sumVAT.textContent = "—";
 				}
 				sumProfit.textContent = "—";
-				if (vatSalesTotal) {
-					vatSalesTotal.textContent = "—";
-				}
-				if (vatPurchaseTotal) {
-					vatPurchaseTotal.textContent = "—";
-				}
 				return;
 			}
 			let volume = 0;
@@ -196,13 +188,6 @@
 				sumVAT.textContent = formatMoneyByCurrency(totalsByCurrency, "vat");
 			}
 			sumProfit.textContent = formatMoneyByCurrency(totalsByCurrency, "profit");
-			if (vatSalesTotal) {
-				vatSalesTotal.textContent = formatMoneyByCurrency(totalsByCurrency, "vat");
-			}
-			if (vatPurchaseTotal) {
-				vatPurchaseTotal.textContent =
-					purchaseVAT != null ? fmtMoney(purchaseVAT) : "—";
-			}
 		}
 
 		function csvEscape(v) {
@@ -285,15 +270,6 @@
 					url += "&brewery_id=" + encodeURIComponent(brewerySel.value);
 				}
 				rows = (await api(url)) || [];
-				let purchaseVAT = null;
-				try {
-					const purchase = await api(
-						"/api/settings/purchase-vat?month=" + encodeURIComponent(month)
-					);
-					purchaseVAT = purchase && purchase.vat_total != null ? Number(purchase.vat_total) : 0;
-				} catch (e) {
-					purchaseVAT = null;
-				}
 				if (brewerySel && canRoles("admin") && !brewerySel.dataset.loaded) {
 					const breweries = await api("/api/breweries");
 					brewerySel.innerHTML =
@@ -321,7 +297,7 @@
 					totalsByCurrency[cur].vat += Number(r.vat_sales) || 0;
 					totalsByCurrency[cur].profit += net - cost;
 				});
-				setSummary(totalsByCurrency, purchaseVAT);
+				setSummary(totalsByCurrency);
 				if (!rows.length) {
 					list.innerHTML =
 						'<p class="panel__empty">' + esc(t("js.economy.no_deliveries", { month: month })) + "</p>";

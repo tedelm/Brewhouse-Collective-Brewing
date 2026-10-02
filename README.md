@@ -7,13 +7,14 @@ Collective brewing is a brewery managment system for breweries that share invent
 
 ## Features
 
+- **First-run Welcome setup** for regional defaults, tax jurisdiction, and VAT, plus an optional interactive **app tour**
 - **Batch pipeline:** recipe → schedule → brewday → hygiene → delivery (in-app **Brewery 101** guide has the full walkthrough)
 - **Shared inventory** across breweries (malt, hops, yeast, misc, equipment) with base **cost price** per item
 - **Suppliers** (admin → Settings): each supplier has an `adjust_percent`; **effective cost** = `cost_price × (1 + adjust_percent / 100)`. Applied when recipes or orders snapshot cost
 - **Orders:** planning wishlist (including recipe shortfalls), ordered, complete to receive stock
 - **Schedule:** brew-day booking plus fermentation tank occupancy (week view + Gantt)
-- **Calculators:** ABV, tax, extract, dilution, yeast pitch (client-side)
-- **Economy:** Swedish alcohol tax config (elevated admin); monthly delivery reports for admin and brewery managers
+- **Tools → Calculators:** ABV, alcohol tax, extract, dilution, yeast pitch, and CO₂ carbonation (client-side)
+- **Economy:** Tax and VAT for the active jurisdiction (elevated admin); monthly delivery reports and purchase-cost reports for admin and brewery managers
 - **IAM:** users, breweries, memberships; admins sign in as superuser and use **Admin mode** to elevate
 - **Settings:** brand, tanks, multipliers, suppliers, beer net price, regional/i18n, hygiene routines, backups
 - **PWA** installable over HTTPS/localhost; service worker caches the shell and static assets (`/api/` stays online-only)
@@ -22,25 +23,69 @@ Collective brewing is a brewery managment system for breweries that share invent
 
 ## Screenshots
 
+### First run
+
+Login shows one-time admin credentials until the first successful sign-in:
+
+![First run login](doc/img/first_run.png)
+
+Welcome setup wizard (regional defaults, tax jurisdiction, VAT):
+
+![Welcome setup](doc/img/first_run_welcome.png)
+
+Interactive app tour (spotlight on Brewing → Recipes):
+
+![App tour](doc/img/first_run_welcome_tour.png)
+
 ### Login
 
 ![Login](doc/img/login.png)
 
 ### Main shell
 
+Home card with Brewery 101 and Admin mode note:
+
 ![Main shell](doc/img/main.png)
+
+### Brewing — Recipes
+
+Batch pipeline statuses, ingredient checkout, and next-step actions:
+
+![Recipes](doc/img/brewing_recipes.png)
+
+### Brewing — Schedule
+
+Brew-day booking, week view, and tank occupancy Gantt:
+
+![Schedule](doc/img/brewing_schedule.png)
+
+### Brewing — Brewday
+
+Record OG and brew volume; hygiene shortcuts and revoke:
+
+![Brewday](doc/img/brewing_brewday.png)
+
+### Brewing — Delivery
+
+FG, volume, beer net and multiplier with live estimate, then deliver to the pub:
+
+![Delivery](doc/img/brewing_delivery.png)
 
 ### Inventory
 
 ![Inventory](doc/img/inventory.png)
 
+### Tools — Calculators
+
+ABV, alcohol tax, extract, dilution, yeast pitch, and CO₂ carbonation:
+
+![Tools calculators](doc/img/tools.png)
+
 ### Economy
 
+Tax and VAT for the active jurisdiction; sidebar also includes Monthly deliveries and Purchase costs:
+
 ![Economy](doc/img/economy.png)
-
-### Calculators
-
-![Calculators](doc/img/calculators.png)
 
 ### IAM
 

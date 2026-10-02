@@ -33,6 +33,10 @@
 			showForbidden(panel);
 			return;
 		}
+		if (kind === "economy-purchases" && !canViewEconomy()) {
+			showForbidden(panel);
+			return;
+		}
 		const panels = window.BrewhousePanels || {};
 		const loaders = {
 			recipes: panels.recipes,
@@ -44,6 +48,7 @@
 			"tools-calculators": panels["tools-calculators"],
 			economy: panels.economy,
 			"economy-deliveries": panels["economy-deliveries"],
+			"economy-purchases": panels["economy-purchases"],
 			delivery: panels.delivery,
 			"iam-users": panels["iam-users"],
 			"iam-breweries": panels["iam-breweries"],

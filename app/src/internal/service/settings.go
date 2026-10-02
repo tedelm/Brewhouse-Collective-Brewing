@@ -578,32 +578,86 @@ func (s *SettingsService) UpdateVATConfig(actor Actor, ratePercent float64) (*VA
 	return s.GetVATConfigForCountry(country)
 }
 
-// SumPurchaseVATForMonth sums order-line VAT for orders ordered/updated in YYYY-MM
-// with status ordered or completed.
-func (s *SettingsService) SumPurchaseVATForMonth(actor Actor, month string) (*PurchaseVATSummary, error) {
-	if err := s.access.RequireEconomyView(actor); err != nil {
-		return nil, err
-	}
-	if len(month) != 7 || month[4] != '-' {
-		return nil, fmt.Errorf("month must be YYYY-MM")
-	}
-	start := month + "-01"
-	var total float64
-	err := s.db.QueryRow(
-		`SELECT COALESCE(SUM(l.vat_amount), 0)
-		 FROM inventory_order_lines l
-		 INNER JOIN inventory_orders o ON o.id = l.order_id
-		 WHERE o.status IN ('ordered', 'completed')
+const purchaseCostMonthFilter = `
+		 o.status IN ('ordered', 'completed')
 		   AND (
 		     (o.ordered_at IS NOT NULL AND o.ordered_at >= ? AND o.ordered_at < date(?, '+1 month'))
 		     OR (o.ordered_at IS NULL AND o.updated_at >= ? AND o.updated_at < date(?, '+1 month'))
-		   )`,
-		start, start, start, start,
-	).Scan(&total)
-	if err != nil {
-		return nil, fmt.Errorf("sum purchase vat: %w", err)
+		   )`
+
+func validatePurchaseMonth(month string) (string, error) {
+	if len(month) != 7 || month[4] != '-' {
+		return "", fmt.Errorf("month must be YYYY-MM")
 	}
-	return &PurchaseVATSummary{Month: month, VATTotal: total}, nil
+	return month + "-01", nil
+}
+
+// ListPurchaseCostsForMonth returns order lines and cost/VAT totals for YYYY-MM.
+func (s *SettingsService) ListPurchaseCostsForMonth(actor Actor, month string) (*PurchaseCostReport, error) {
+	if err := s.access.RequireEconomyView(actor); err != nil {
+		return nil, err
+	}
+	start, err := validatePurchaseMonth(month)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.db.Query(
+		`SELECT o.id, COALESCE(o.ordered_at, o.updated_at, ''), o.status,
+		        l.item_name, l.category, l.qty, l.ordered_qty,
+		        COALESCE(l.cost_price, 0), COALESCE(l.vat_rate, 0), COALESCE(l.vat_amount, 0),
+		        COALESCE(i.unit, ''), COALESCE(b.name, '')
+		 FROM inventory_order_lines l
+		 INNER JOIN inventory_orders o ON o.id = l.order_id
+		 LEFT JOIN inventory_items i ON i.id = l.inventory_item_id
+		 LEFT JOIN breweries b ON b.id = l.brewery_id
+		 WHERE `+purchaseCostMonthFilter+`
+		 ORDER BY COALESCE(o.ordered_at, o.updated_at), o.id, l.item_name`,
+		start, start, start, start,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list purchase costs: %w", err)
+	}
+	defer rows.Close()
+
+	report := &PurchaseCostReport{Month: month, Lines: []PurchaseCostLine{}}
+	for rows.Next() {
+		var line PurchaseCostLine
+		var orderedQty sql.NullFloat64
+		if err := rows.Scan(
+			&line.OrderID, &line.OrderedAt, &line.Status,
+			&line.ItemName, &line.Category, &line.Qty, &orderedQty,
+			&line.CostPrice, &line.VATRate, &line.VATAmount,
+			&line.Unit, &line.BreweryName,
+		); err != nil {
+			return nil, err
+		}
+		if orderedQty.Valid {
+			v := orderedQty.Float64
+			line.OrderedQty = &v
+		}
+		qty := line.Qty
+		if line.OrderedQty != nil {
+			qty = *line.OrderedQty
+		}
+		line.LineCost = line.CostPrice * qty
+		report.CostTotal += line.LineCost
+		report.VATTotal += line.VATAmount
+		report.Lines = append(report.Lines, line)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+// SumPurchaseVATForMonth sums order-line VAT for orders ordered/updated in YYYY-MM
+// with status ordered or completed.
+func (s *SettingsService) SumPurchaseVATForMonth(actor Actor, month string) (*PurchaseVATSummary, error) {
+	report, err := s.ListPurchaseCostsForMonth(actor, month)
+	if err != nil {
+		return nil, err
+	}
+	return &PurchaseVATSummary{Month: report.Month, VATTotal: report.VATTotal}, nil
 }
 
 const (

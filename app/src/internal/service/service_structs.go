@@ -248,8 +248,33 @@ type AppTourStatus struct {
 
 // PurchaseVATSummary is purchase VAT for a calendar month.
 type PurchaseVATSummary struct {
-	Month   string  `json:"month"`
+	Month    string  `json:"month"`
 	VATTotal float64 `json:"vat_total"`
+}
+
+// PurchaseCostLine is one order line in a monthly purchase-cost report.
+type PurchaseCostLine struct {
+	OrderID     int64    `json:"order_id"`
+	OrderedAt   string   `json:"ordered_at"`
+	Status      string   `json:"status"`
+	ItemName    string   `json:"item_name"`
+	Category    string   `json:"category"`
+	Qty         float64  `json:"qty"`
+	OrderedQty  *float64 `json:"ordered_qty,omitempty"`
+	CostPrice   float64  `json:"cost_price"`
+	LineCost    float64  `json:"line_cost"`
+	VATRate     float64  `json:"vat_rate"`
+	VATAmount   float64  `json:"vat_amount"`
+	Unit        string   `json:"unit,omitempty"`
+	BreweryName string   `json:"brewery_name,omitempty"`
+}
+
+// PurchaseCostReport is purchase costs and VAT for a calendar month.
+type PurchaseCostReport struct {
+	Month     string             `json:"month"`
+	CostTotal float64            `json:"cost_total"`
+	VATTotal  float64            `json:"vat_total"`
+	Lines     []PurchaseCostLine `json:"lines"`
 }
 
 // BeerPriceConfig holds the minimum net sale price per liter (SEK).
