@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "Le taux de TVA doit être entre 0 et 100",
   "js.delivery.col.vat": "TVA de vente",
   "js.economy.col.vat": "TVA de vente",
-  "js.economy.help.vat": "TVA de vente sur le net de livraison au taux du pays."
+  "js.economy.help.vat": "TVA de vente sur le net de livraison au taux du pays.",
+  "inventory.vat_rate": "TVA d’achat (%)",
+  "inventory.vat_rate_placeholder": "Défaut du pays",
+  "js.inventory.col.vat": "TVA d’achat"
 }

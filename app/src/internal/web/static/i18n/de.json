@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "MwSt.-Satz muss zwischen 0 und 100 liegen",
   "js.delivery.col.vat": "Verkaufs-MwSt.",
   "js.economy.col.vat": "Verkaufs-MwSt.",
-  "js.economy.help.vat": "Verkaufs-MwSt. auf dem Liefernetto zum Ländersatz."
+  "js.economy.help.vat": "Verkaufs-MwSt. auf dem Liefernetto zum Ländersatz.",
+  "inventory.vat_rate": "Einkaufs-MwSt. (%)",
+  "inventory.vat_rate_placeholder": "Länderstandard",
+  "js.inventory.col.vat": "Einkaufs-MwSt."
 }

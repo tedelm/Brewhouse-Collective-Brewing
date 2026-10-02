@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "ALV-kannan on oltava välillä 0–100",
   "js.delivery.col.vat": "Myynti-ALV",
   "js.economy.col.vat": "Myynti-ALV",
-  "js.economy.help.vat": "Myynti-ALV toimituksen netosta maan ALV-kannalla."
+  "js.economy.help.vat": "Myynti-ALV toimituksen netosta maan ALV-kannalla.",
+  "inventory.vat_rate": "Osto-ALV (%)",
+  "inventory.vat_rate_placeholder": "Maan oletus",
+  "js.inventory.col.vat": "Osto-ALV"
 }

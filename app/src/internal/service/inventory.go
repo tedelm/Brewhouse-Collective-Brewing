@@ -10,7 +10,7 @@ import (
 	"brewhouse/internal/database"
 )
 
-const inventorySelectCols = `i.id, i.category, i.name, i.unit, i.qty, i.cost_price, i.producer, i.item_type, i.min_ebc, i.max_ebc, i.link, i.pitch_min_g_hl, i.pitch_max_g_hl, i.pack_size_g, i.temp_min_c, i.temp_max_c, i.supplier_id, COALESCE(s.name, ''), COALESCE(s.adjust_percent, 0)`
+const inventorySelectCols = `i.id, i.category, i.name, i.unit, i.qty, i.cost_price, i.vat_rate, i.producer, i.item_type, i.min_ebc, i.max_ebc, i.link, i.pitch_min_g_hl, i.pitch_max_g_hl, i.pack_size_g, i.temp_min_c, i.temp_max_c, i.supplier_id, COALESCE(s.name, ''), COALESCE(s.adjust_percent, 0)`
 
 const inventoryFrom = `inventory_items i LEFT JOIN suppliers s ON s.id = i.supplier_id`
 
@@ -35,8 +35,9 @@ func scanInventoryItem(scanner interface {
 }) (InventoryItem, error) {
 	var item InventoryItem
 	var supplierID sql.NullInt64
+	var vatRate sql.NullFloat64
 	err := scanner.Scan(
-		&item.ID, &item.Category, &item.Name, &item.Unit, &item.Qty, &item.CostPrice,
+		&item.ID, &item.Category, &item.Name, &item.Unit, &item.Qty, &item.CostPrice, &vatRate,
 		&item.Producer, &item.ItemType, &item.MinEBC, &item.MaxEBC, &item.Link,
 		&item.PitchMinGHl, &item.PitchMaxGHl, &item.PackSizeG, &item.TempMinC, &item.TempMaxC,
 		&supplierID, &item.SupplierName, &item.AdjustPercent,
@@ -44,12 +45,26 @@ func scanInventoryItem(scanner interface {
 	if err != nil {
 		return item, err
 	}
+	if vatRate.Valid {
+		v := vatRate.Float64
+		item.VATRate = &v
+	}
 	if supplierID.Valid {
 		id := supplierID.Int64
 		item.SupplierID = &id
 	}
 	item.EffectiveCostPrice = EffectiveCost(item.CostPrice, item.AdjustPercent)
 	return item, nil
+}
+
+func validateItemVATRate(rate *float64) error {
+	if rate == nil {
+		return nil
+	}
+	if *rate < 0 || *rate > 100 {
+		return fmt.Errorf("vat_rate must be between 0 and 100")
+	}
+	return nil
 }
 
 func (s *InventoryService) resolveSupplierID(id *int64) (*int64, error) {
@@ -142,15 +157,18 @@ func (s *InventoryService) Create(actor Actor, in InventoryItem) (*InventoryItem
 	if in.Unit == "" {
 		in.Unit = "kg"
 	}
+	if err := validateItemVATRate(in.VATRate); err != nil {
+		return nil, err
+	}
 	supplierID, err := s.resolveSupplierID(in.SupplierID)
 	if err != nil {
 		return nil, err
 	}
 	res, err := s.db.Exec(
-		`INSERT INTO inventory_items (category, name, unit, qty, cost_price, producer, item_type, min_ebc, max_ebc, link,
+		`INSERT INTO inventory_items (category, name, unit, qty, cost_price, vat_rate, producer, item_type, min_ebc, max_ebc, link,
 			pitch_min_g_hl, pitch_max_g_hl, pack_size_g, temp_min_c, temp_max_c, supplier_id)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		in.Category, in.Name, in.Unit, in.Qty, in.CostPrice,
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		in.Category, in.Name, in.Unit, in.Qty, in.CostPrice, in.VATRate,
 		in.Producer, in.ItemType, in.MinEBC, in.MaxEBC, in.Link,
 		in.PitchMinGHl, in.PitchMaxGHl, in.PackSizeG, in.TempMinC, in.TempMaxC, supplierID,
 	)
@@ -179,6 +197,9 @@ func (s *InventoryService) Update(actor Actor, id int64, in InventoryItem) (*Inv
 	if in.Unit == "" {
 		in.Unit = "kg"
 	}
+	if err := validateItemVATRate(in.VATRate); err != nil {
+		return nil, err
+	}
 	before, err := s.Get(id)
 	if err != nil {
 		return nil, err
@@ -188,12 +209,12 @@ func (s *InventoryService) Update(actor Actor, id int64, in InventoryItem) (*Inv
 		return nil, err
 	}
 	_, err = s.db.Exec(
-		`UPDATE inventory_items SET name = ?, unit = ?, qty = ?, cost_price = ?,
+		`UPDATE inventory_items SET name = ?, unit = ?, qty = ?, cost_price = ?, vat_rate = ?,
 		 producer = ?, item_type = ?, min_ebc = ?, max_ebc = ?, link = ?,
 		 pitch_min_g_hl = ?, pitch_max_g_hl = ?, pack_size_g = ?, temp_min_c = ?, temp_max_c = ?,
 		 supplier_id = ?
 		 WHERE id = ?`,
-		in.Name, in.Unit, in.Qty, in.CostPrice,
+		in.Name, in.Unit, in.Qty, in.CostPrice, in.VATRate,
 		in.Producer, in.ItemType, in.MinEBC, in.MaxEBC, in.Link,
 		in.PitchMinGHl, in.PitchMaxGHl, in.PackSizeG, in.TempMinC, in.TempMaxC,
 		supplierID, id,
@@ -378,12 +399,13 @@ func (s *InventoryService) insertOrderLineTx(db execQuerier, orderID, itemID int
 	}
 	item := &InventoryItem{}
 	var adjustPercent float64
+	var itemVAT sql.NullFloat64
 	err := db.QueryRow(
-		`SELECT i.id, i.category, i.name, i.cost_price, COALESCE(s.adjust_percent, 0)
+		`SELECT i.id, i.category, i.name, i.cost_price, i.vat_rate, COALESCE(s.adjust_percent, 0)
 		 FROM inventory_items i
 		 LEFT JOIN suppliers s ON s.id = i.supplier_id
 		 WHERE i.id = ?`, itemID,
-	).Scan(&item.ID, &item.Category, &item.Name, &item.CostPrice, &adjustPercent)
+	).Scan(&item.ID, &item.Category, &item.Name, &item.CostPrice, &itemVAT, &adjustPercent)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -392,6 +414,9 @@ func (s *InventoryService) insertOrderLineTx(db execQuerier, orderID, itemID int
 	}
 	effectiveCost := EffectiveCost(item.CostPrice, adjustPercent)
 	vatRate := s.activeVATRatePercent()
+	if itemVAT.Valid {
+		vatRate = itemVAT.Float64
+	}
 	if breweryID != nil {
 		var bid int64
 		err = db.QueryRow(`SELECT id FROM breweries WHERE id = ?`, *breweryID).Scan(&bid)

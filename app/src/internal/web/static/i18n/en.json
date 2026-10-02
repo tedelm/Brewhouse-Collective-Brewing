@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "VAT rate must be between 0 and 100",
   "js.delivery.col.vat": "Sales VAT",
   "js.economy.col.vat": "Sales VAT",
-  "js.economy.help.vat": "Sales VAT on delivery net for the tax jurisdiction rate."
+  "js.economy.help.vat": "Sales VAT on delivery net for the tax jurisdiction rate.",
+  "inventory.vat_rate": "Purchase VAT (%)",
+  "inventory.vat_rate_placeholder": "Country default",
+  "js.inventory.col.vat": "Purchase VAT"
 }

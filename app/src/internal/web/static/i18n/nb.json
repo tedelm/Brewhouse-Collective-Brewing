@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "MVA-satsen må være mellom 0 og 100",
   "js.delivery.col.vat": "Salgsmoms",
   "js.economy.col.vat": "Salgsmoms",
-  "js.economy.help.vat": "Salgsmoms på leveransens netto etter landets MVA-sats."
+  "js.economy.help.vat": "Salgsmoms på leveransens netto etter landets MVA-sats.",
+  "inventory.vat_rate": "Innkjøps-MVA (%)",
+  "inventory.vat_rate_placeholder": "Landets standard",
+  "js.inventory.col.vat": "Innkjøps-MVA"
 }

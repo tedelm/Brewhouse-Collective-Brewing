@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "Stawka VAT musi być między 0 a 100",
   "js.delivery.col.vat": "VAT sprzedaży",
   "js.economy.col.vat": "VAT sprzedaży",
-  "js.economy.help.vat": "VAT sprzedaży od netto dostawy według stawki kraju."
+  "js.economy.help.vat": "VAT sprzedaży od netto dostawy według stawki kraju.",
+  "inventory.vat_rate": "VAT zakupu (%)",
+  "inventory.vat_rate_placeholder": "Domyślnie kraju",
+  "js.inventory.col.vat": "VAT zakupu"
 }

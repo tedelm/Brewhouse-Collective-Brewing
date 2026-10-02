@@ -100,8 +100,9 @@ type InventoryItem struct {
 	Name               string  `json:"name"`
 	Unit               string  `json:"unit"`
 	Qty                float64 `json:"qty"`
-	CostPrice          float64 `json:"cost_price"`
-	Producer           string  `json:"producer"`
+	CostPrice          float64  `json:"cost_price"`
+	VATRate            *float64 `json:"vat_rate,omitempty"`
+	Producer           string   `json:"producer"`
 	ItemType           string  `json:"item_type"`
 	MinEBC             float64 `json:"min_ebc"`
 	MaxEBC             float64 `json:"max_ebc"`

@@ -12,13 +12,13 @@ import (
 
 // inventoryCSVColumns returns export/import columns relevant for the category.
 func inventoryCSVColumns(category string) []string {
-	base := []string{"category", "name", "unit", "qty", "cost_price", "producer", "supplier", "item_type", "link"}
+	base := []string{"category", "name", "unit", "qty", "cost_price", "vat_rate", "producer", "supplier", "item_type", "link"}
 	switch category {
 	case CategoryMalt:
-		return []string{"category", "name", "unit", "qty", "cost_price", "producer", "supplier", "item_type", "min_ebc", "max_ebc", "link"}
+		return []string{"category", "name", "unit", "qty", "cost_price", "vat_rate", "producer", "supplier", "item_type", "min_ebc", "max_ebc", "link"}
 	case CategoryYeast:
 		return []string{
-			"category", "name", "unit", "qty", "cost_price", "producer", "supplier", "item_type", "link",
+			"category", "name", "unit", "qty", "cost_price", "vat_rate", "producer", "supplier", "item_type", "link",
 			"pitch_min_g_hl", "pitch_max_g_hl", "pack_size_g", "temp_min_c", "temp_max_c",
 		}
 	default:
@@ -26,12 +26,12 @@ func inventoryCSVColumns(category string) []string {
 	}
 }
 
-// inventoryCSVRequiredColumns are headers required on import (supplier is optional).
+// inventoryCSVRequiredColumns are headers required on import (supplier and vat_rate are optional).
 func inventoryCSVRequiredColumns(category string) []string {
 	cols := inventoryCSVColumns(category)
 	out := make([]string, 0, len(cols))
 	for _, c := range cols {
-		if c == "supplier" {
+		if c == "supplier" || c == "vat_rate" {
 			continue
 		}
 		out = append(out, c)
@@ -53,6 +53,10 @@ func inventoryCSVRow(item InventoryItem, cols []string) []string {
 			out[i] = formatCSVFloat(item.Qty)
 		case "cost_price":
 			out[i] = formatCSVFloat(item.CostPrice)
+		case "vat_rate":
+			if item.VATRate != nil {
+				out[i] = formatCSVFloat(*item.VATRate)
+			}
 		case "producer":
 			out[i] = item.Producer
 		case "supplier":
@@ -216,6 +220,14 @@ func (s *InventoryService) importInventoryRow(actor Actor, category string, idx 
 	if err != nil {
 		return "", fmt.Errorf("cost_price: %w", err)
 	}
+	_, hasVATCol := idx["vat_rate"]
+	var vatRate *float64
+	if hasVATCol {
+		vatRate, err = parseOptionalCSVFloat(csvCol(rec, idx, "vat_rate"))
+		if err != nil {
+			return "", fmt.Errorf("vat_rate: %w", err)
+		}
+	}
 	minEBC, err := parseCSVFloat(csvCol(rec, idx, "min_ebc"))
 	if err != nil {
 		return "", fmt.Errorf("min_ebc: %w", err)
@@ -267,6 +279,7 @@ func (s *InventoryService) importInventoryRow(actor Actor, category string, idx 
 		Unit:        unit,
 		Qty:         qty,
 		CostPrice:   costPrice,
+		VATRate:     vatRate,
 		Producer:    producer,
 		ItemType:    itemType,
 		MinEBC:      minEBC,
@@ -292,6 +305,9 @@ func (s *InventoryService) importInventoryRow(actor Actor, category string, idx 
 	}
 	if !hasSupplierCol {
 		in.SupplierID = existing.SupplierID
+	}
+	if !hasVATCol {
+		in.VATRate = existing.VATRate
 	}
 	if _, err := s.Update(actor, existing.ID, in); err != nil {
 		return "", err
@@ -340,4 +356,16 @@ func parseCSVFloat(raw string) (float64, error) {
 		return 0, fmt.Errorf("invalid number %q", raw)
 	}
 	return v, nil
+}
+
+func parseOptionalCSVFloat(raw string) (*float64, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	v, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid number %q", raw)
+	}
+	return &v, nil
 }

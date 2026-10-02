@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "El tipo de IVA debe estar entre 0 y 100",
   "js.delivery.col.vat": "IVA de venta",
   "js.economy.col.vat": "IVA de venta",
-  "js.economy.help.vat": "IVA de venta sobre el neto de entrega según el tipo del país."
+  "js.economy.help.vat": "IVA de venta sobre el neto de entrega según el tipo del país.",
+  "inventory.vat_rate": "IVA de compra (%)",
+  "inventory.vat_rate_placeholder": "Por defecto del país",
+  "js.inventory.col.vat": "IVA de compra"
 }

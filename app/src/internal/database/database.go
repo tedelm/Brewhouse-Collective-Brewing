@@ -86,6 +86,7 @@ func migrate(db *sql.DB) error {
 			unit TEXT NOT NULL DEFAULT 'kg',
 			qty REAL NOT NULL DEFAULT 0,
 			cost_price REAL NOT NULL DEFAULT 0,
+			vat_rate REAL,
 			producer TEXT NOT NULL DEFAULT '',
 			item_type TEXT NOT NULL DEFAULT '',
 			min_ebc REAL NOT NULL DEFAULT 0,
@@ -334,6 +335,9 @@ func migrate(db *sql.DB) error {
 	}
 	if err := ensureOrderLineVATColumns(db); err != nil {
 		return fmt.Errorf("ensure order line vat: %w", err)
+	}
+	if err := ensureInventoryItemVATColumn(db); err != nil {
+		return fmt.Errorf("ensure inventory item vat: %w", err)
 	}
 	if err := ensureRecipeVATColumns(db); err != nil {
 		return fmt.Errorf("ensure recipes vat: %w", err)
@@ -829,6 +833,12 @@ func ensureOrderLineVATColumns(db *sql.DB) error {
 		rate, rate,
 	)
 	return err
+}
+
+// ensureInventoryItemVATColumn adds nullable purchase VAT rate on catalog items.
+func ensureInventoryItemVATColumn(db *sql.DB) error {
+	return addColumnIfMissing(db, "inventory_items", "vat_rate",
+		`ALTER TABLE inventory_items ADD COLUMN vat_rate REAL`)
 }
 
 // ensureRecipeVATColumns adds sales VAT snapshot fields on recipes.

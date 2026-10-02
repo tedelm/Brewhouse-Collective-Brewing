@@ -782,5 +782,8 @@
   "js.orders.vat_invalid": "Momssatsen skal være mellem 0 og 100",
   "js.delivery.col.vat": "Salgsmoms",
   "js.economy.col.vat": "Salgsmoms",
-  "js.economy.help.vat": "Salgsmoms på leverancens netto efter landets momssats."
+  "js.economy.help.vat": "Salgsmoms på leverancens netto efter landets momssats.",
+  "inventory.vat_rate": "Indkøbsmoms (%)",
+  "inventory.vat_rate_placeholder": "Landets standard",
+  "js.inventory.col.vat": "Indkøbsmoms"
 }
