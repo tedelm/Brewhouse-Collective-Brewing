@@ -138,16 +138,19 @@
 		);
 	}
 
-	function fmtMoney(n) {
+	function fmtMoney(n, currencyOverride) {
 		if (n == null || n === "" || Number.isNaN(Number(n))) {
 			return "";
 		}
 		const amount = Number(n).toFixed(2);
-		const suffix =
-			window.BH_I18N && typeof window.BH_I18N.currencySuffix === "function"
-				? window.BH_I18N.currencySuffix()
-				: " SEK";
-		return amount + suffix;
+		let code = currencyOverride;
+		if (!code) {
+			code =
+				window.BH_I18N && typeof window.BH_I18N.currencyCode === "function"
+					? window.BH_I18N.currencyCode()
+					: "SEK";
+		}
+		return amount + " " + code;
 	}
 
 	function fmtMoneyAmount(n) {
@@ -223,11 +226,92 @@
 		}
 	}
 
+	function platoFromSG(sg) {
+		const n = Number(sg);
+		if (!n || n <= 0 || Number.isNaN(n)) {
+			return 0;
+		}
+		return -616.868 + 1111.14 * n - 630.272 * n * n + 135.997 * n * n * n;
+	}
+
+	function sgFromPlato(plato) {
+		const p = Number(plato);
+		if (!p || p <= 0 || Number.isNaN(p)) {
+			return 1.0;
+		}
+		let lo = 1.0;
+		let hi = 1.25;
+		for (let i = 0; i < 64; i++) {
+			const mid = (lo + hi) / 2;
+			if (platoFromSG(mid) < p) {
+				lo = mid;
+			} else {
+				hi = mid;
+			}
+		}
+		return (lo + hi) / 2;
+	}
+
+	function gravityUnit() {
+		if (window.BH_I18N && typeof window.BH_I18N.gravityUnit === "function") {
+			return window.BH_I18N.gravityUnit();
+		}
+		return "sg";
+	}
+
 	function fmtSG(v, fallback) {
 		if (v == null || v === "" || Number.isNaN(Number(v))) {
 			return fallback != null ? fallback : "";
 		}
 		return Number(v).toFixed(3);
+	}
+
+	function fmtGravity(sg, fallbackSG) {
+		if (sg == null || sg === "" || Number.isNaN(Number(sg))) {
+			if (gravityUnit() === "plato") {
+				if (fallbackSG == null || fallbackSG === "") {
+					return "";
+				}
+				return platoFromSG(fallbackSG).toFixed(1);
+			}
+			return fallbackSG != null ? fallbackSG : "";
+		}
+		if (gravityUnit() === "plato") {
+			return platoFromSG(sg).toFixed(1);
+		}
+		return Number(sg).toFixed(3);
+	}
+
+	/** Convert UI gravity field value to SG for API storage. */
+	function toSG(inputValue) {
+		const n = Number(inputValue);
+		if (Number.isNaN(n)) {
+			return NaN;
+		}
+		if (gravityUnit() === "plato") {
+			return sgFromPlato(n);
+		}
+		return n;
+	}
+
+	function gravityInputDefaults() {
+		if (gravityUnit() === "plato") {
+			return { og: "12.0", fg: "2.5", step: "0.1", min: "0" };
+		}
+		return { og: "1.050", fg: "1.010", step: "0.001", min: "0" };
+	}
+
+	function applyGravityInputs(root) {
+		const defs = gravityInputDefaults();
+		(root || document).querySelectorAll("[data-gravity-input]").forEach(function (input) {
+			input.step = defs.step;
+			if (defs.min != null) {
+				input.min = defs.min;
+			}
+		});
+		if (window.BH_I18N && typeof window.BH_I18N.applyGravityLabels === "function") {
+			window.BH_I18N.applyGravityLabels(root || document);
+		}
 	}
 
 	function datePart(iso) {
@@ -438,6 +522,13 @@
 		categoryText,
 		syncRegionalFromServer,
 		fmtSG,
+		fmtGravity,
+		toSG,
+		platoFromSG,
+		sgFromPlato,
+		gravityUnit,
+		gravityInputDefaults,
+		applyGravityInputs,
 		datePart,
 		recipeABV,
 		appConfirm,

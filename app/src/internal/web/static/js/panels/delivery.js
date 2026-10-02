@@ -19,6 +19,9 @@
 		categoryText,
 		syncRegionalFromServer,
 		fmtSG,
+		fmtGravity,
+		toSG,
+		applyGravityInputs,
 		datePart,
 		recipeABV,
 		appConfirm,
@@ -54,12 +57,15 @@
 		const previewProfit = panel.querySelector("#delivery-preview-profit");
 		const previewPerL = panel.querySelector("#delivery-preview-per-l");
 		let byID = {};
-		let taxCfg = { rate_sek: 2.28, free_max_abv: 2.8, discount: 1.0 };
+		let taxPreviewTimer = null;
 		let previewOG = null;
 		let previewCostTotal = 0;
 
 		function fillFG(recipe) {
-			fgInput.value = fmtSG(recipe && recipe.fg, "1.010");
+			const defs = window.BrewhouseCore.gravityInputDefaults
+				? window.BrewhouseCore.gravityInputDefaults()
+				: { fg: "1.010" };
+			fgInput.value = fmtGravity(recipe && recipe.fg, defs.fg);
 		}
 
 		function clearPreview() {
@@ -83,7 +89,7 @@
 
 		function updatePreview() {
 			const og = previewOG;
-			const fg = parseFloat(fgInput.value);
+			const fg = toSG(fgInput.value);
 			const vol = parseFloat(volInput.value);
 			const beerNet = parseFloat(beerNetInput.value);
 			const mult = selectedMultiplier();
@@ -100,18 +106,33 @@
 				return;
 			}
 			const abv = (og - fg) * 131.25;
-			const taxPerL =
-				abv <= taxCfg.free_max_abv ? 0 : abv * taxCfg.rate_sek * taxCfg.discount;
-			const tax = vol * taxPerL;
 			const cost = previewCostTotal;
 			const perL = beerNet * mult;
 			const net = perL * vol;
 			previewABV.textContent = abv.toFixed(1) + " %";
 			previewCost.textContent = fmtMoney(cost);
-			previewTax.textContent = fmtMoney(tax);
 			previewNet.textContent = fmtMoney(net);
 			previewProfit.textContent = fmtMoney(net - cost);
 			previewPerL.textContent = fmtMoney(perL);
+			previewTax.textContent = "…";
+			if (taxPreviewTimer) {
+				clearTimeout(taxPreviewTimer);
+			}
+			taxPreviewTimer = setTimeout(async () => {
+				try {
+					const preview = await api(
+						"/api/settings/tax-preview?abv=" +
+							encodeURIComponent(abv) +
+							"&og=" +
+							encodeURIComponent(og) +
+							"&volume=" +
+							encodeURIComponent(vol)
+					);
+					previewTax.textContent = fmtMoney(preview.total);
+				} catch (e) {
+					previewTax.textContent = "—";
+				}
+			}, 150);
 		}
 
 		async function loadRecipePreview(id) {
@@ -139,12 +160,10 @@
 		}
 
 		async function loadPricingControls() {
-			const [mults, beer, tax] = await Promise.all([
+			const [mults, beer] = await Promise.all([
 				api("/api/settings/multipliers?active=1"),
 				api("/api/settings/beer-price"),
-				api("/api/settings/tax-config"),
 			]);
-			taxCfg = tax || taxCfg;
 			const listMults = mults || [];
 			multSel.innerHTML = listMults
 				.map((m) => {
@@ -225,8 +244,9 @@
 									'">' + esc(t("js.delivery.revoke")) + "</button>";
 							}
 							const hasCostNet = r.cost != null && r.net != null;
+							const cur = r.currency_code || "SEK";
 							const profit = hasCostNet
-								? fmtMoney((Number(r.net) || 0) - (Number(r.cost) || 0))
+								? fmtMoney((Number(r.net) || 0) - (Number(r.cost) || 0), cur)
 								: "—";
 							return (
 								"<tr><td>" +
@@ -244,11 +264,11 @@
 								"</td><td>" +
 								esc(recipeABV(r)) +
 								"</td><td>" +
-								fmtMoney(r.cost) +
+								fmtMoney(r.cost, cur) +
 								"</td><td>" +
-								fmtMoney(r.tax) +
+								fmtMoney(r.tax, cur) +
 								"</td><td>" +
-								fmtMoney(r.net) +
+								fmtMoney(r.net, cur) +
 								"</td><td>" +
 								profit +
 								"</td><td>" +
@@ -316,7 +336,7 @@
 				await api("/api/recipes/" + fd.get("recipe_id") + "/delivery", {
 					method: "POST",
 					body: JSON.stringify({
-						fg: parseFloat(fd.get("fg")),
+						fg: toSG(fd.get("fg")),
 						delivery_volume: parseFloat(fd.get("delivery_volume")),
 						beer_net_sek_per_liter: parseFloat(fd.get("beer_net_sek_per_liter")),
 						multiplier_id: parseInt(fd.get("multiplier_id"), 10),
@@ -334,6 +354,13 @@
 		} catch (e) {
 			errEl.hidden = false;
 			errEl.textContent = e.message;
+		}
+		applyGravityInputs(panel);
+		const defs = window.BrewhouseCore.gravityInputDefaults
+			? window.BrewhouseCore.gravityInputDefaults()
+			: { fg: "1.010" };
+		if (!recipeSel.value) {
+			fgInput.value = defs.fg;
 		}
 		refresh();
 	}

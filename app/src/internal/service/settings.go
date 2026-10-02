@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"brewhouse/internal/database"
+	"brewhouse/internal/service/tax"
 )
 
 // SettingsService manages tanks, tax tiers, multipliers, and hygiene routines.
@@ -262,35 +264,122 @@ func (s *SettingsService) DeleteTaxTier(actor Actor, id int64) error {
 	return nil
 }
 
-// TaxForABV returns SEK/liter for the given ABV using Swedish beer formula.
-func (s *SettingsService) TaxForABV(abv float64) (float64, error) {
-	cfg, err := s.GetAlcoholTaxConfig()
+// TaxForDelivery returns currency/liter tax for the active jurisdiction.
+func (s *SettingsService) TaxForDelivery(abv, og, volumeL float64) (float64, error) {
+	preview, err := s.TaxPreview(abv, og, volumeL)
 	if err != nil {
 		return 0, err
 	}
-	if abv <= cfg.FreeMaxABV {
-		return 0, nil
-	}
-	return abv * cfg.RateSEK * cfg.Discount, nil
+	return preview.PerLiter, nil
 }
 
-// GetAlcoholTaxConfig returns the single tax config row (defaults if missing).
-func (s *SettingsService) GetAlcoholTaxConfig() (*AlcoholTaxConfig, error) {
-	cfg := &AlcoholTaxConfig{}
-	err := s.db.QueryRow(
-		`SELECT rate_sek, free_max_abv, discount FROM alcohol_tax_config WHERE id = 1`,
-	).Scan(&cfg.RateSEK, &cfg.FreeMaxABV, &cfg.Discount)
-	if errors.Is(err, sql.ErrNoRows) {
-		return &AlcoholTaxConfig{RateSEK: 2.28, FreeMaxABV: 2.8, Discount: 1.0}, nil
-	}
+// TaxPreview computes tax for ABV/OG/volume using the active tax country profile.
+func (s *SettingsService) TaxPreview(abv, og, volumeL float64) (*TaxPreview, error) {
+	regional, err := s.GetRegionalConfig()
 	if err != nil {
+		return nil, err
+	}
+	cfg, err := s.GetAlcoholTaxConfigForCountry(regional.TaxCountry)
+	if err != nil {
+		return nil, err
+	}
+	plato := tax.PlatoFromSG(og)
+	profile := tax.Profile{
+		Country:     cfg.Country,
+		Basis:       cfg.Basis,
+		Params:      cfg.Params,
+		DiscountKey: cfg.DiscountKey,
+	}
+	res, err := tax.Calculate(profile, tax.Input{
+		ABV: abv, Plato: plato, VolumeL: volumeL, DiscountKey: cfg.DiscountKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &TaxPreview{
+		Country:  cfg.Country,
+		Basis:    cfg.Basis,
+		ABV:      abv,
+		Plato:    plato,
+		PerLiter: res.PerLiter,
+		Total:    res.Total,
+	}, nil
+}
+
+// GetAlcoholTaxConfig returns the active country's tax profile.
+func (s *SettingsService) GetAlcoholTaxConfig() (*AlcoholTaxConfig, error) {
+	regional, err := s.GetRegionalConfig()
+	if err != nil {
+		return nil, err
+	}
+	return s.GetAlcoholTaxConfigForCountry(regional.TaxCountry)
+}
+
+// GetAlcoholTaxConfigForCountry loads one country's profile.
+func (s *SettingsService) GetAlcoholTaxConfigForCountry(country string) (*AlcoholTaxConfig, error) {
+	if !tax.ValidCountry(country) {
+		country = tax.CountrySV
+	}
+	cfg := &AlcoholTaxConfig{Country: country}
+	var params string
+	err := s.db.QueryRow(
+		`SELECT basis, params_json, discount_key FROM alcohol_tax_config WHERE country = ?`,
+		country,
+	).Scan(&cfg.Basis, &params, &cfg.DiscountKey)
+	if errors.Is(err, sql.ErrNoRows) {
+		cfg.Basis = tax.DefaultBasis(country)
+		params = tax.DefaultParamsJSON(country)
+		cfg.DiscountKey = "full"
+	} else if err != nil {
 		return nil, fmt.Errorf("get alcohol tax config: %w", err)
 	}
+	cfg.Params = json.RawMessage(params)
+	cfg.DiscountOptions = toDiscountOptions(tax.DiscountOptions(country))
+	fillLegacySwedishFields(cfg)
 	return cfg, nil
 }
 
-// UpdateAlcoholTaxConfig updates the Swedish beer tax formula parameters.
-func (s *SettingsService) UpdateAlcoholTaxConfig(actor Actor, rateSEK, freeMaxABV, discount float64) (*AlcoholTaxConfig, error) {
+func toDiscountOptions(opts []tax.DiscountOption) []TaxDiscountOption {
+	out := make([]TaxDiscountOption, len(opts))
+	for i, o := range opts {
+		out[i] = TaxDiscountOption{Key: o.Key, Label: o.Label}
+	}
+	return out
+}
+
+func fillLegacySwedishFields(cfg *AlcoholTaxConfig) {
+	if cfg.Country != tax.CountrySV {
+		return
+	}
+	var p struct {
+		Rate       float64 `json:"rate"`
+		FreeMaxABV float64 `json:"free_max_abv"`
+	}
+	_ = json.Unmarshal(cfg.Params, &p)
+	cfg.RateSEK = p.Rate
+	cfg.FreeMaxABV = p.FreeMaxABV
+	cfg.Discount = svDiscountFloat(cfg.DiscountKey)
+}
+
+func svDiscountFloat(key string) float64 {
+	switch key {
+	case "sv_50":
+		return 0.5
+	case "sv_60":
+		return 0.6
+	case "sv_70":
+		return 0.7
+	case "sv_80":
+		return 0.8
+	case "sv_90":
+		return 0.9
+	default:
+		return 1.0
+	}
+}
+
+// UpdateAlcoholTaxConfig updates the active country's params and discount key.
+func (s *SettingsService) UpdateAlcoholTaxConfig(actor Actor, params json.RawMessage, discountKey string) (*AlcoholTaxConfig, error) {
 	ok, err := s.access.CanManageEconomy(actor)
 	if err != nil {
 		return nil, err
@@ -298,64 +387,130 @@ func (s *SettingsService) UpdateAlcoholTaxConfig(actor Actor, rateSEK, freeMaxAB
 	if !ok {
 		return nil, ErrForbidden
 	}
-	if rateSEK < 0 || freeMaxABV < 0 {
-		return nil, fmt.Errorf("rate and free max ABV must be non-negative")
+	regional, err := s.GetRegionalConfig()
+	if err != nil {
+		return nil, err
 	}
-	if !validTaxDiscount(discount) {
-		return nil, fmt.Errorf("discount must be 0.5, 0.6, 0.7, 0.8, 0.9, or 1.0")
+	country := regional.TaxCountry
+	if !tax.ValidCountry(country) {
+		return nil, fmt.Errorf("invalid tax country")
+	}
+	if discountKey == "" {
+		discountKey = "full"
+	}
+	if !tax.ValidDiscountKey(country, discountKey) {
+		return nil, fmt.Errorf("invalid discount_key for country %s", country)
+	}
+	if len(params) == 0 || !json.Valid(params) {
+		return nil, fmt.Errorf("params must be valid JSON")
+	}
+	// Validate params by running a dry calculate.
+	profile := tax.Profile{
+		Country: country, Basis: tax.DefaultBasis(country),
+		Params: params, DiscountKey: discountKey,
+	}
+	if _, err := tax.Calculate(profile, tax.Input{ABV: 5, Plato: 12, VolumeL: 1, DiscountKey: discountKey}); err != nil {
+		return nil, fmt.Errorf("invalid tax params: %w", err)
 	}
 	_, err = s.db.Exec(
-		`INSERT INTO alcohol_tax_config (id, rate_sek, free_max_abv, discount) VALUES (1, ?, ?, ?)
-		 ON CONFLICT(id) DO UPDATE SET rate_sek = excluded.rate_sek, free_max_abv = excluded.free_max_abv, discount = excluded.discount`,
-		rateSEK, freeMaxABV, discount,
+		`INSERT INTO alcohol_tax_config (country, basis, params_json, discount_key) VALUES (?, ?, ?, ?)
+		 ON CONFLICT(country) DO UPDATE SET params_json = excluded.params_json, discount_key = excluded.discount_key`,
+		country, tax.DefaultBasis(country), string(params), discountKey,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return s.GetAlcoholTaxConfig()
+	return s.GetAlcoholTaxConfigForCountry(country)
 }
 
-func validTaxDiscount(d float64) bool {
-	switch d {
-	case 0.5, 0.6, 0.7, 0.8, 0.9, 1.0:
-		return true
+// UpdateAlcoholTaxConfigLegacy updates Swedish-style rate/free/discount fields (compat).
+func (s *SettingsService) UpdateAlcoholTaxConfigLegacy(actor Actor, rateSEK, freeMaxABV, discount float64) (*AlcoholTaxConfig, error) {
+	key := "full"
+	switch discount {
+	case 0.5:
+		key = "sv_50"
+	case 0.6:
+		key = "sv_60"
+	case 0.7:
+		key = "sv_70"
+	case 0.8:
+		key = "sv_80"
+	case 0.9:
+		key = "sv_90"
+	case 1.0:
+		key = "full"
 	default:
-		return false
+		return nil, fmt.Errorf("discount must be 0.5, 0.6, 0.7, 0.8, 0.9, or 1.0")
 	}
+	if rateSEK < 0 || freeMaxABV < 0 {
+		return nil, fmt.Errorf("rate and free max ABV must be non-negative")
+	}
+	params, _ := json.Marshal(map[string]float64{"rate": rateSEK, "free_max_abv": freeMaxABV})
+	// Ensure regional is Sweden for legacy updates when params are Swedish-shaped.
+	regional, err := s.GetRegionalConfig()
+	if err != nil {
+		return nil, err
+	}
+	if regional.TaxCountry != tax.CountrySV {
+		// Still allow writing to active country only via generic path — for legacy API,
+		// require active country to be sv.
+		return nil, fmt.Errorf("legacy tax fields only apply when tax_country is sv")
+	}
+	return s.UpdateAlcoholTaxConfig(actor, params, key)
 }
 
-// GetRegionalConfig returns display currency and language (defaults SEK/en).
+// GetRegionalConfig returns display currency, language, tax country, and gravity unit.
 func (s *SettingsService) GetRegionalConfig() (*RegionalConfig, error) {
 	cfg := &RegionalConfig{}
 	err := s.db.QueryRow(
-		`SELECT currency_code, language FROM regional_config WHERE id = 1`,
-	).Scan(&cfg.CurrencyCode, &cfg.Language)
+		`SELECT currency_code, language, tax_country, gravity_unit FROM regional_config WHERE id = 1`,
+	).Scan(&cfg.CurrencyCode, &cfg.Language, &cfg.TaxCountry, &cfg.GravityUnit)
 	if errors.Is(err, sql.ErrNoRows) {
-		return &RegionalConfig{CurrencyCode: "SEK", Language: "en"}, nil
+		return &RegionalConfig{CurrencyCode: "SEK", Language: "en", TaxCountry: tax.CountrySV, GravityUnit: "sg"}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get regional config: %w", err)
 	}
+	if cfg.TaxCountry == "" {
+		cfg.TaxCountry = tax.CountrySV
+	}
+	if cfg.GravityUnit == "" {
+		cfg.GravityUnit = "sg"
+	}
 	return cfg, nil
 }
 
-// UpdateRegionalConfig updates display currency and language.
-func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, language string) (*RegionalConfig, error) {
+// UpdateRegionalConfig updates display currency, language, tax jurisdiction, and gravity unit.
+func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, language, taxCountry, gravityUnit string) (*RegionalConfig, error) {
 	if err := s.requireAdmin(actor); err != nil {
 		return nil, err
 	}
 	currencyCode = strings.ToUpper(strings.TrimSpace(currencyCode))
 	language = strings.ToLower(strings.TrimSpace(language))
+	taxCountry = strings.ToLower(strings.TrimSpace(taxCountry))
+	gravityUnit = strings.ToLower(strings.TrimSpace(gravityUnit))
+	if taxCountry == "" {
+		taxCountry = tax.CountrySV
+	}
+	if gravityUnit == "" {
+		gravityUnit = "sg"
+	}
 	if _, ok := supportedRegionalCurrencies[currencyCode]; !ok {
 		return nil, fmt.Errorf("currency_code must be SEK, EUR, USD, NOK, DKK, or PLN")
 	}
 	if _, ok := supportedRegionalLanguages[language]; !ok {
 		return nil, fmt.Errorf("language must be one of en, sv, nb, da, fi, de, es, fr, pl")
 	}
+	if !tax.ValidCountry(taxCountry) {
+		return nil, fmt.Errorf("tax_country must be one of sv, nb, da, fi, de, es, fr, pl")
+	}
+	if gravityUnit != "sg" && gravityUnit != "plato" {
+		return nil, fmt.Errorf("gravity_unit must be sg or plato")
+	}
 	_, err := s.db.Exec(
-		`INSERT INTO regional_config (id, currency_code, language) VALUES (1, ?, ?)
-		 ON CONFLICT(id) DO UPDATE SET currency_code = excluded.currency_code, language = excluded.language`,
-		currencyCode, language,
+		`INSERT INTO regional_config (id, currency_code, language, tax_country, gravity_unit) VALUES (1, ?, ?, ?, ?)
+		 ON CONFLICT(id) DO UPDATE SET currency_code = excluded.currency_code, language = excluded.language, tax_country = excluded.tax_country, gravity_unit = excluded.gravity_unit`,
+		currencyCode, language, taxCountry, gravityUnit,
 	)
 	if err != nil {
 		return nil, err

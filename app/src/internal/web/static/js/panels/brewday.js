@@ -19,6 +19,9 @@
 		categoryText,
 		syncRegionalFromServer,
 		fmtSG,
+		fmtGravity,
+		toSG,
+		applyGravityInputs,
 		datePart,
 		recipeABV,
 		appConfirm,
@@ -48,7 +51,10 @@
 		let byID = {};
 
 		function fillBrewdayFields(recipe) {
-			ogInput.value = fmtSG(recipe && recipe.og, "1.050");
+			const defs = window.BrewhouseCore.gravityInputDefaults
+				? window.BrewhouseCore.gravityInputDefaults()
+				: { og: "1.050" };
+			ogInput.value = fmtGravity(recipe && recipe.og, defs.og);
 			if (recipe && recipe.brew_volume != null && recipe.brew_volume !== "") {
 				volInput.value = recipe.brew_volume;
 			} else {
@@ -133,7 +139,7 @@
 								"</td><td>" +
 								statusPill(r.status, statusText(r.status)) +
 								"</td><td>" +
-								fmtSG(r.og, "") +
+								fmtGravity(r.og, "") +
 								"</td><td>" +
 								(r.brew_volume ?? "") +
 								"</td><td>" +
@@ -238,7 +244,7 @@
 				await api("/api/recipes/" + fd.get("recipe_id") + "/brewday", {
 					method: "POST",
 					body: JSON.stringify({
-						og: parseFloat(fd.get("og")),
+						og: toSG(fd.get("og")),
 						brew_volume: parseFloat(fd.get("brew_volume")),
 					}),
 				});
@@ -249,6 +255,13 @@
 				errEl.textContent = e.message;
 			}
 		});
+		applyGravityInputs(panel);
+		const defs = window.BrewhouseCore.gravityInputDefaults
+			? window.BrewhouseCore.gravityInputDefaults()
+			: { og: "1.050" };
+		if (!recipeSel.value) {
+			ogInput.value = defs.og;
+		}
 		refresh();
 	}
 

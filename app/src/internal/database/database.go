@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	_ "modernc.org/sqlite"
@@ -122,10 +123,10 @@ func migrate(db *sql.DB) error {
 			sek_per_liter REAL NOT NULL
 		)`,
 		`CREATE TABLE IF NOT EXISTS alcohol_tax_config (
-			id INTEGER PRIMARY KEY CHECK (id = 1),
-			rate_sek REAL NOT NULL,
-			free_max_abv REAL NOT NULL,
-			discount REAL NOT NULL
+			country TEXT PRIMARY KEY,
+			basis TEXT NOT NULL,
+			params_json TEXT NOT NULL,
+			discount_key TEXT NOT NULL DEFAULT 'full'
 		)`,
 		`CREATE TABLE IF NOT EXISTS beer_price_config (
 			id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -148,7 +149,9 @@ func migrate(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS regional_config (
 			id INTEGER PRIMARY KEY CHECK (id = 1),
 			currency_code TEXT NOT NULL,
-			language TEXT NOT NULL
+			language TEXT NOT NULL,
+			tax_country TEXT NOT NULL DEFAULT 'sv',
+			gravity_unit TEXT NOT NULL DEFAULT 'sg'
 		)`,
 		`CREATE TABLE IF NOT EXISTS price_multipliers (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -176,6 +179,7 @@ func migrate(db *sql.DB) error {
 			cost REAL,
 			tax REAL,
 			net REAL,
+			currency_code TEXT NOT NULL DEFAULT '',
 			created_by INTEGER,
 			created_at TEXT NOT NULL,
 			delivered_at TEXT,
@@ -299,11 +303,23 @@ func migrate(db *sql.DB) error {
 	if err := ensureRecipeActiveColumn(db); err != nil {
 		return fmt.Errorf("ensure recipes.active: %w", err)
 	}
+	if err := ensureRecipeCurrencyColumn(db); err != nil {
+		return fmt.Errorf("ensure recipes.currency_code: %w", err)
+	}
 	if err := ensureBreweryInstagramColumn(db); err != nil {
 		return fmt.Errorf("ensure breweries.instagram: %w", err)
 	}
 	if err := ensureDemoColumns(db); err != nil {
 		return fmt.Errorf("ensure demo columns: %w", err)
+	}
+	if err := migrateAlcoholTaxConfig(db); err != nil {
+		return fmt.Errorf("migrate alcohol tax config: %w", err)
+	}
+	if err := ensureRegionalTaxCountry(db); err != nil {
+		return fmt.Errorf("ensure regional tax_country: %w", err)
+	}
+	if err := ensureRegionalGravityUnit(db); err != nil {
+		return fmt.Errorf("ensure regional gravity_unit: %w", err)
 	}
 
 	if err := seedDefaults(db); err != nil {
@@ -400,6 +416,25 @@ func ensureTankAndMultiplierActiveColumns(db *sql.DB) error {
 func ensureRecipeActiveColumn(db *sql.DB) error {
 	return addColumnIfMissing(db, "recipes", "active",
 		`ALTER TABLE recipes ADD COLUMN active INTEGER NOT NULL DEFAULT 1`)
+}
+
+// ensureRecipeCurrencyColumn stamps currency on priced deliveries for display after regional changes.
+func ensureRecipeCurrencyColumn(db *sql.DB) error {
+	if err := addColumnIfMissing(db, "recipes", "currency_code",
+		`ALTER TABLE recipes ADD COLUMN currency_code TEXT NOT NULL DEFAULT ''`); err != nil {
+		return err
+	}
+	var code string
+	err := db.QueryRow(`SELECT currency_code FROM regional_config WHERE id = 1`).Scan(&code)
+	if err != nil || code == "" {
+		code = "SEK"
+	}
+	_, err = db.Exec(
+		`UPDATE recipes SET currency_code = ?
+		 WHERE currency_code = '' AND (cost IS NOT NULL OR tax IS NOT NULL OR net IS NOT NULL)`,
+		code,
+	)
+	return err
 }
 
 func ensureBreweryInstagramColumn(db *sql.DB) error {
@@ -616,18 +651,107 @@ func addColumnIfMissing(db *sql.DB, table, column, alterSQL string) error {
 	return err
 }
 
-func seedDefaults(db *sql.DB) error {
-	var count int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM alcohol_tax_config`).Scan(&count); err != nil {
+// ensureRegionalTaxCountry adds tax jurisdiction independent of UI language.
+func ensureRegionalTaxCountry(db *sql.DB) error {
+	return addColumnIfMissing(db, "regional_config", "tax_country",
+		`ALTER TABLE regional_config ADD COLUMN tax_country TEXT NOT NULL DEFAULT 'sv'`)
+}
+
+// ensureRegionalGravityUnit adds SG/°Plato display-and-input preference.
+func ensureRegionalGravityUnit(db *sql.DB) error {
+	return addColumnIfMissing(db, "regional_config", "gravity_unit",
+		`ALTER TABLE regional_config ADD COLUMN gravity_unit TEXT NOT NULL DEFAULT 'sg'`)
+}
+
+// migrateAlcoholTaxConfig rebuilds legacy singleton Swedish rows into per-country profiles.
+func migrateAlcoholTaxConfig(db *sql.DB) error {
+	ok, err := columnExists(db, "alcohol_tax_config", "country")
+	if err != nil {
 		return err
 	}
-	if count == 0 {
-		// Swedish beer tax: 0 at/below free_max_abv; else ABV × rate_sek × discount (SEK/L).
+	if ok {
+		return seedTaxCountryRows(db)
+	}
+
+	// Legacy table: id, rate_sek, free_max_abv, discount
+	var rate, free, discount float64
+	err = db.QueryRow(`SELECT rate_sek, free_max_abv, discount FROM alcohol_tax_config WHERE id = 1`).
+		Scan(&rate, &free, &discount)
+	hasLegacy := err == nil
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		// Table may be empty or already mid-migration; try recreate path.
+		hasLegacy = false
+	}
+
+	if _, err := db.Exec(`ALTER TABLE alcohol_tax_config RENAME TO alcohol_tax_config_legacy`); err != nil {
+		return fmt.Errorf("rename legacy tax config: %w", err)
+	}
+	if _, err := db.Exec(`CREATE TABLE alcohol_tax_config (
+		country TEXT PRIMARY KEY,
+		basis TEXT NOT NULL,
+		params_json TEXT NOT NULL,
+		discount_key TEXT NOT NULL DEFAULT 'full'
+	)`); err != nil {
+		return fmt.Errorf("create tax config: %w", err)
+	}
+
+	discountKey := "full"
+	if hasLegacy {
+		switch discount {
+		case 0.5:
+			discountKey = "sv_50"
+		case 0.6:
+			discountKey = "sv_60"
+		case 0.7:
+			discountKey = "sv_70"
+		case 0.8:
+			discountKey = "sv_80"
+		case 0.9:
+			discountKey = "sv_90"
+		}
+		params := fmt.Sprintf(`{"rate":%g,"free_max_abv":%g}`, rate, free)
 		if _, err := db.Exec(
-			`INSERT INTO alcohol_tax_config (id, rate_sek, free_max_abv, discount) VALUES (1, 2.28, 2.8, 1.0)`,
+			`INSERT INTO alcohol_tax_config (country, basis, params_json, discount_key) VALUES ('sv', 'abv_per_pct', ?, ?)`,
+			params, discountKey,
 		); err != nil {
 			return err
 		}
+	}
+
+	if _, err := db.Exec(`DROP TABLE IF EXISTS alcohol_tax_config_legacy`); err != nil {
+		return err
+	}
+	return seedTaxCountryRows(db)
+}
+
+func seedTaxCountryRows(db *sql.DB) error {
+	rows := []struct {
+		country, basis, params, discount string
+	}{
+		{"sv", "abv_per_pct", `{"rate":2.28,"free_max_abv":2.8}`, "full"},
+		{"nb", "abv_per_pct", `{"rate":5.41}`, "full"},
+		{"da", "pure_alcohol", `{"rate":48.74,"free_max_abv":2.7}`, "full"},
+		{"fi", "pure_alcohol", `{"rate_low_cents_per_cl":28.75,"rate_high_cents_per_cl":36.71,"low_max_abv":3.5,"min_abv":0.5}`, "full"},
+		{"de", "plato_rate", `{"rate_per_hl_plato":0.787}`, "full"},
+		{"es", "plato_bands", `{"bands":[]}`, "full"},
+		{"fr", "abv_per_pct", `{"rate_high":8.24,"rate_low":4.12,"low_max_abv":2.8}`, "full"},
+		{"pl", "plato_rate", `{"rate_per_hl_plato":11.47}`, "full"},
+	}
+	for _, row := range rows {
+		if _, err := db.Exec(
+			`INSERT OR IGNORE INTO alcohol_tax_config (country, basis, params_json, discount_key) VALUES (?, ?, ?, ?)`,
+			row.country, row.basis, row.params, row.discount,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func seedDefaults(db *sql.DB) error {
+	var count int
+	if err := seedTaxCountryRows(db); err != nil {
+		return err
 	}
 
 	if err := db.QueryRow(`SELECT COUNT(*) FROM beer_price_config`).Scan(&count); err != nil {
@@ -661,7 +785,7 @@ func seedDefaults(db *sql.DB) error {
 	}
 	if count == 0 {
 		if _, err := db.Exec(
-			`INSERT INTO regional_config (id, currency_code, language) VALUES (1, 'SEK', 'en')`,
+			`INSERT INTO regional_config (id, currency_code, language, tax_country, gravity_unit) VALUES (1, 'SEK', 'en', 'sv', 'sg')`,
 		); err != nil {
 			return err
 		}

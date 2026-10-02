@@ -2,11 +2,13 @@
 	const STORAGE_KEY = "brewhouse_regional";
 	const SUPPORTED_LANGUAGES = ["en", "sv", "nb", "da", "fi", "de", "es", "fr", "pl"];
 	const SUPPORTED_CURRENCIES = ["SEK", "EUR", "USD", "NOK", "DKK", "PLN"];
+	const SUPPORTED_GRAVITY = ["sg", "plato"];
 	const catalogs = Object.fromEntries(SUPPORTED_LANGUAGES.map(function (code) {
 		return [code, {}];
 	}));
 	let language = "en";
 	let currency = "SEK";
+	let gravityUnit = "sg";
 	let ready = false;
 
 	function isSupportedLanguage(lang) {
@@ -15,6 +17,10 @@
 
 	function isSupportedCurrency(code) {
 		return SUPPORTED_CURRENCIES.indexOf(code) >= 0;
+	}
+
+	function isSupportedGravity(unit) {
+		return SUPPORTED_GRAVITY.indexOf(unit) >= 0;
 	}
 
 	function loadCache() {
@@ -30,6 +36,9 @@
 			if (isSupportedCurrency(o.currency_code)) {
 				currency = o.currency_code;
 			}
+			if (isSupportedGravity(o.gravity_unit)) {
+				gravityUnit = o.gravity_unit;
+			}
 		} catch (_) {
 			/* ignore */
 		}
@@ -39,7 +48,11 @@
 		try {
 			localStorage.setItem(
 				STORAGE_KEY,
-				JSON.stringify({ language: language, currency_code: currency })
+				JSON.stringify({
+					language: language,
+					currency_code: currency,
+					gravity_unit: gravityUnit,
+				})
 			);
 		} catch (_) {
 			/* ignore */
@@ -84,6 +97,25 @@
 		});
 	}
 
+	function applyGravityLabels(scope) {
+		(scope || document).querySelectorAll("[data-gravity-label]").forEach(function (el) {
+			const mode = el.getAttribute("data-gravity-label");
+			let key;
+			if (mode === "og") {
+				key = gravityUnit === "plato" ? "brewday.og_plato" : "brewday.og";
+			} else if (mode === "fg") {
+				key = gravityUnit === "plato" ? "delivery.fg_plato" : "delivery.fg";
+			} else if (mode === "common-og") {
+				key = gravityUnit === "plato" ? "common.og_plato" : "common.og";
+			} else if (mode === "common-fg") {
+				key = gravityUnit === "plato" ? "common.fg_plato" : "common.fg";
+			}
+			if (key) {
+				el.textContent = t(key);
+			}
+		});
+	}
+
 	function applyI18n(root) {
 		const scope = root || document;
 		scope.querySelectorAll("[data-i18n]").forEach(function (el) {
@@ -101,6 +133,7 @@
 			el.innerHTML = t(key);
 		});
 		scope.querySelectorAll("[data-i18n-attr]").forEach(applyAttrs);
+		applyGravityLabels(scope);
 		if (document.documentElement) {
 			document.documentElement.lang = language;
 		}
@@ -144,6 +177,9 @@
 		if (cfg.language) {
 			language = cfg.language;
 		}
+		if (isSupportedGravity(cfg.gravity_unit)) {
+			gravityUnit = cfg.gravity_unit;
+		}
 		saveCache();
 		if (!ready) {
 			await loadCatalogs();
@@ -167,6 +203,10 @@
 		return language;
 	}
 
+	function getGravityUnit() {
+		return gravityUnit;
+	}
+
 	loadCache();
 
 	global.BH_I18N = {
@@ -179,6 +219,8 @@
 		currencySuffix: currencySuffix,
 		currencyPerLiter: currencyPerLiter,
 		getLanguage: getLanguage,
+		gravityUnit: getGravityUnit,
+		applyGravityLabels: applyGravityLabels,
 		loadCatalogs: loadCatalogs,
 		loadCache: loadCache,
 		saveCache: saveCache,

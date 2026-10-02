@@ -425,6 +425,8 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		h.settingsTax(w, r, actor, parts[1:])
 	case "tax-config":
 		h.settingsTaxConfig(w, r, actor, parts[1:])
+	case "tax-preview":
+		h.settingsTaxPreview(w, r, actor, parts[1:])
 	case "multipliers":
 		h.settingsMultipliers(w, r, actor, parts[1:])
 	case "suppliers":
@@ -611,7 +613,13 @@ func (h *Handler) settingsTaxConfig(w http.ResponseWriter, r *http.Request, acto
 			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 			return
 		}
-		cfg, err := h.settings.UpdateAlcoholTaxConfig(actor, req.RateSEK, req.FreeMaxABV, req.Discount)
+		var cfg *service.AlcoholTaxConfig
+		var err error
+		if len(req.Params) > 0 {
+			cfg, err = h.settings.UpdateAlcoholTaxConfig(actor, req.Params, req.DiscountKey)
+		} else {
+			cfg, err = h.settings.UpdateAlcoholTaxConfigLegacy(actor, req.RateSEK, req.FreeMaxABV, req.Discount)
+		}
 		if err != nil {
 			if errors.Is(err, service.ErrForbidden) {
 				h.writeErr(w, err)
@@ -624,6 +632,33 @@ func (h *Handler) settingsTaxConfig(w http.ResponseWriter, r *http.Request, acto
 	default:
 		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 	}
+}
+
+func (h *Handler) settingsTaxPreview(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if len(parts) != 0 {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+		return
+	}
+	q := r.URL.Query()
+	abv, _ := strconv.ParseFloat(q.Get("abv"), 64)
+	og, _ := strconv.ParseFloat(q.Get("og"), 64)
+	volume, _ := strconv.ParseFloat(q.Get("volume"), 64)
+	if volume <= 0 {
+		volume = 1
+	}
+	if og <= 0 {
+		og = 1.048 // ~12 °P default for previews without OG
+	}
+	preview, err := h.settings.TaxPreview(abv, og, volume)
+	if err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, preview)
 }
 
 func (h *Handler) settingsBeerPrice(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
@@ -679,7 +714,7 @@ func (h *Handler) settingsRegional(w http.ResponseWriter, r *http.Request, actor
 			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 			return
 		}
-		cfg, err := h.settings.UpdateRegionalConfig(actor, req.CurrencyCode, req.Language)
+		cfg, err := h.settings.UpdateRegionalConfig(actor, req.CurrencyCode, req.Language, req.TaxCountry, req.GravityUnit)
 		if err != nil {
 			if errors.Is(err, service.ErrForbidden) {
 				h.writeErr(w, err)

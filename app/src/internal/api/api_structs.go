@@ -1,6 +1,10 @@
 package api
 
-import "brewhouse/internal/service"
+import (
+	"encoding/json"
+
+	"brewhouse/internal/service"
+)
 
 // LoginRequest is the JSON body for POST /api/login.
 type LoginRequest struct {
@@ -217,11 +221,14 @@ type TaxTierRequest struct {
 	SEKPerLiter float64 `json:"sek_per_liter"`
 }
 
-// TaxConfigRequest is update for Swedish beer tax formula settings.
+// TaxConfigRequest updates the active country's tax profile.
+// Legacy Swedish fields (rate_sek, free_max_abv, discount) are accepted when tax_country is sv.
 type TaxConfigRequest struct {
-	RateSEK    float64 `json:"rate_sek"`
-	FreeMaxABV float64 `json:"free_max_abv"`
-	Discount   float64 `json:"discount"`
+	Params      json.RawMessage `json:"params"`
+	DiscountKey string          `json:"discount_key"`
+	RateSEK     float64         `json:"rate_sek"`
+	FreeMaxABV  float64         `json:"free_max_abv"`
+	Discount    float64         `json:"discount"`
 }
 
 // MultiplierRequest is create/update for price multipliers.
@@ -246,10 +253,12 @@ type BeerPriceRequest struct {
 	MinNetSEKPerLiter float64 `json:"min_net_sek_per_liter"`
 }
 
-// RegionalRequest is update for display currency and UI language.
+// RegionalRequest is update for display currency, UI language, tax jurisdiction, and gravity unit.
 type RegionalRequest struct {
 	CurrencyCode string `json:"currency_code"`
 	Language     string `json:"language"`
+	TaxCountry   string `json:"tax_country"`
+	GravityUnit  string `json:"gravity_unit"`
 }
 
 // HygieneRoutineRequest is create/update for hygiene routines.

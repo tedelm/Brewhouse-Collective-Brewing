@@ -135,17 +135,31 @@
 			return y + "-" + m;
 		}
 
+		function recipeCurrency(r) {
+			return (r && r.currency_code) || "SEK";
+		}
+
 		function netPerLiter(r) {
 			const vol = Number(r.delivery_volume);
 			const net = Number(r.net);
 			if (!vol || Number.isNaN(vol) || vol <= 0 || Number.isNaN(net)) {
 				return "";
 			}
-			return fmtMoney(net / vol);
+			return fmtMoney(net / vol, recipeCurrency(r));
 		}
 
-		function setSummary(totals) {
-			if (!totals) {
+		function formatMoneyByCurrency(byCurrency, field) {
+			const codes = Object.keys(byCurrency).sort();
+			if (!codes.length) {
+				return "—";
+			}
+			return codes
+				.map((code) => fmtMoney(byCurrency[code][field] || 0, code))
+				.join(" · ");
+		}
+
+		function setSummary(totalsByCurrency) {
+			if (!totalsByCurrency) {
 				sumVol.textContent = "—";
 				sumCost.textContent = "—";
 				sumNet.textContent = "—";
@@ -153,11 +167,15 @@
 				sumProfit.textContent = "—";
 				return;
 			}
-			sumVol.textContent = fmtMoneyAmount(totals.volume) + " L";
-			sumCost.textContent = fmtMoney(totals.cost);
-			sumTax.textContent = fmtMoney(totals.tax);
-			sumNet.textContent = fmtMoney(totals.net);
-			sumProfit.textContent = fmtMoney(totals.profit);
+			let volume = 0;
+			Object.keys(totalsByCurrency).forEach((code) => {
+				volume += totalsByCurrency[code].volume || 0;
+			});
+			sumVol.textContent = fmtMoneyAmount(volume) + " L";
+			sumCost.textContent = formatMoneyByCurrency(totalsByCurrency, "cost");
+			sumTax.textContent = formatMoneyByCurrency(totalsByCurrency, "tax");
+			sumNet.textContent = formatMoneyByCurrency(totalsByCurrency, "net");
+			sumProfit.textContent = formatMoneyByCurrency(totalsByCurrency, "profit");
 		}
 
 		function csvEscape(v) {
@@ -181,6 +199,7 @@
 				t("js.economy.col.tax"),
 				t("js.economy.col.net"),
 				t("js.economy.col.profit"),
+				t("js.economy.col.currency"),
 				t("js.economy.net_per_l", { currency: currencyCode() }),
 			];
 			const lines = [header.join(",")];
@@ -193,6 +212,7 @@
 				const net = r.net != null ? Number(r.net) : NaN;
 				const profit =
 					!Number.isNaN(cost) && !Number.isNaN(net) ? (net - cost).toFixed(2) : "";
+				const cur = recipeCurrency(r);
 				lines.push(
 					[
 						datePart(r.delivered_at),
@@ -205,6 +225,7 @@
 						r.tax != null ? Number(r.tax).toFixed(2) : "",
 						r.net != null ? Number(r.net).toFixed(2) : "",
 						profit,
+						cur,
 						netPerLiter(r),
 					]
 						.map(csvEscape)
@@ -247,17 +268,21 @@
 					brewerySel.dataset.loaded = "1";
 					brewerySel.hidden = false;
 				}
-				const totals = { volume: 0, cost: 0, tax: 0, net: 0, profit: 0 };
+				const totalsByCurrency = {};
 				rows.forEach((r) => {
+					const cur = recipeCurrency(r);
+					if (!totalsByCurrency[cur]) {
+						totalsByCurrency[cur] = { volume: 0, cost: 0, tax: 0, net: 0, profit: 0 };
+					}
 					const cost = Number(r.cost) || 0;
 					const net = Number(r.net) || 0;
-					totals.volume += Number(r.delivery_volume) || 0;
-					totals.cost += cost;
-					totals.tax += Number(r.tax) || 0;
-					totals.net += net;
-					totals.profit += net - cost;
+					totalsByCurrency[cur].volume += Number(r.delivery_volume) || 0;
+					totalsByCurrency[cur].cost += cost;
+					totalsByCurrency[cur].tax += Number(r.tax) || 0;
+					totalsByCurrency[cur].net += net;
+					totalsByCurrency[cur].profit += net - cost;
 				});
-				setSummary(totals);
+				setSummary(totalsByCurrency);
 				if (!rows.length) {
 					list.innerHTML =
 						'<p class="panel__empty">' + esc(t("js.economy.no_deliveries", { month: month })) + "</p>";
@@ -268,6 +293,7 @@
 						.map((r) => {
 							const cost = Number(r.cost) || 0;
 							const net = Number(r.net) || 0;
+							const cur = recipeCurrency(r);
 							return (
 								"<tr><td>" +
 								esc(datePart(r.delivered_at)) +
@@ -282,13 +308,13 @@
 								"</td><td>" +
 								fmtMoneyAmount(r.delivery_volume) +
 								"</td><td>" +
-								fmtMoney(r.cost) +
+								fmtMoney(r.cost, cur) +
 								"</td><td>" +
-								fmtMoney(r.tax) +
+								fmtMoney(r.tax, cur) +
 								"</td><td>" +
-								fmtMoney(r.net) +
+								fmtMoney(r.net, cur) +
 								"</td><td>" +
-								fmtMoney(net - cost) +
+								fmtMoney(net - cost, cur) +
 								"</td><td>" +
 								esc(netPerLiter(r)) +
 								"</td></tr>"

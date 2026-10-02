@@ -38,46 +38,212 @@
 		showForbidden,
 	} = window.BrewhouseCore;
 
+	const EXAMPLE_ABVS = [3.5, 4.5, 5.0, 5.5, 6.0, 8.0];
+	const EXAMPLE_OG = 1.048; // ~12 °P
+
+	function discountLabel(key) {
+		const i18nKey = "economy.tax.discount_" + key;
+		const translated = t(i18nKey);
+		return translated === i18nKey ? key : translated;
+	}
+
+	function countryLabel(code) {
+		const i18nKey = "settings.regional.tax_" + code;
+		const translated = t(i18nKey);
+		return translated === i18nKey ? code : translated;
+	}
+
+	function renderParamFields(container, cfg) {
+		const params = cfg.params && typeof cfg.params === "object" ? cfg.params : {};
+		const basis = cfg.basis || "";
+		let html = "";
+		if (basis === "abv_per_pct" && cfg.country === "fr") {
+			html +=
+				'<label><span data-i18n="economy.tax.rate_high">Rate high ({currency}/hl/% ABV)</span>' +
+				'<input name="rate_high" type="number" step="0.01" min="0" required value="' +
+				esc(String(params.rate_high ?? "")) +
+				'"></label>';
+			html +=
+				'<label><span data-i18n="economy.tax.rate_low">Rate low ({currency}/hl/% ABV)</span>' +
+				'<input name="rate_low" type="number" step="0.01" min="0" required value="' +
+				esc(String(params.rate_low ?? "")) +
+				'"></label>';
+			html +=
+				'<label><span data-i18n="economy.tax.low_max_abv">Low ABV threshold (%)</span>' +
+				'<input name="low_max_abv" type="number" step="0.1" min="0" required value="' +
+				esc(String(params.low_max_abv ?? "")) +
+				'"></label>';
+		} else if (basis === "abv_per_pct") {
+			html +=
+				'<label><span data-i18n="economy.tax.rate">Rate ({currency} per liter per % ABV)</span>' +
+				'<input name="rate" type="number" step="0.01" min="0" required value="' +
+				esc(String(params.rate ?? cfg.rate_sek ?? "")) +
+				'"></label>';
+			if (params.free_max_abv != null || cfg.country === "sv") {
+				html +=
+					'<label><span data-i18n="economy.tax.free_max">Free max ABV (%)</span>' +
+					'<input name="free_max_abv" type="number" step="0.1" min="0" required value="' +
+					esc(String(params.free_max_abv ?? cfg.free_max_abv ?? "")) +
+					'"></label>';
+			}
+		} else if (basis === "pure_alcohol" && cfg.country === "fi") {
+			html +=
+				'<label><span data-i18n="economy.tax.rate_low_cents">Low band (cents/cl pure alcohol)</span>' +
+				'<input name="rate_low_cents_per_cl" type="number" step="0.01" min="0" required value="' +
+				esc(String(params.rate_low_cents_per_cl ?? "")) +
+				'"></label>';
+			html +=
+				'<label><span data-i18n="economy.tax.rate_high_cents">High band (cents/cl pure alcohol)</span>' +
+				'<input name="rate_high_cents_per_cl" type="number" step="0.01" min="0" required value="' +
+				esc(String(params.rate_high_cents_per_cl ?? "")) +
+				'"></label>';
+			html +=
+				'<label><span data-i18n="economy.tax.low_max_abv">Low band max ABV (%)</span>' +
+				'<input name="low_max_abv" type="number" step="0.1" min="0" required value="' +
+				esc(String(params.low_max_abv ?? "")) +
+				'"></label>';
+			html +=
+				'<label><span data-i18n="economy.tax.min_abv">Min taxable ABV (%)</span>' +
+				'<input name="min_abv" type="number" step="0.1" min="0" required value="' +
+				esc(String(params.min_abv ?? "")) +
+				'"></label>';
+		} else if (basis === "pure_alcohol") {
+			html +=
+				'<label><span data-i18n="economy.tax.rate_pure">Rate ({currency}/L pure alcohol)</span>' +
+				'<input name="rate" type="number" step="0.01" min="0" required value="' +
+				esc(String(params.rate ?? "")) +
+				'"></label>';
+			html +=
+				'<label><span data-i18n="economy.tax.free_max">Free max ABV (%)</span>' +
+				'<input name="free_max_abv" type="number" step="0.1" min="0" required value="' +
+				esc(String(params.free_max_abv ?? "")) +
+				'"></label>';
+		} else if (basis === "plato_rate") {
+			html +=
+				'<label><span data-i18n="economy.tax.rate_plato">Rate ({currency}/hl/°Plato)</span>' +
+				'<input name="rate_per_hl_plato" type="number" step="0.001" min="0" required value="' +
+				esc(String(params.rate_per_hl_plato ?? "")) +
+				'"></label>';
+		} else if (basis === "plato_bands") {
+			html +=
+				'<p class="panel__lead" data-i18n="economy.tax.es_bands_note">Spain uses fixed ABV/°Plato bands (2026). Rates are built into the calculator.</p>';
+		}
+		container.innerHTML = html;
+		if (window.BH_I18N && typeof window.BH_I18N.apply === "function") {
+			window.BH_I18N.apply(container);
+		}
+	}
+
+	function collectParams(form, cfg) {
+		const basis = cfg.basis;
+		const fd = new FormData(form);
+		if (basis === "abv_per_pct" && cfg.country === "fr") {
+			return {
+				rate_high: parseFloat(fd.get("rate_high")),
+				rate_low: parseFloat(fd.get("rate_low")),
+				low_max_abv: parseFloat(fd.get("low_max_abv")),
+			};
+		}
+		if (basis === "abv_per_pct") {
+			const out = { rate: parseFloat(fd.get("rate")) };
+			const free = fd.get("free_max_abv");
+			if (free != null && free !== "") {
+				out.free_max_abv = parseFloat(free);
+			}
+			return out;
+		}
+		if (basis === "pure_alcohol" && cfg.country === "fi") {
+			return {
+				rate_low_cents_per_cl: parseFloat(fd.get("rate_low_cents_per_cl")),
+				rate_high_cents_per_cl: parseFloat(fd.get("rate_high_cents_per_cl")),
+				low_max_abv: parseFloat(fd.get("low_max_abv")),
+				min_abv: parseFloat(fd.get("min_abv")),
+			};
+		}
+		if (basis === "pure_alcohol") {
+			return {
+				rate: parseFloat(fd.get("rate")),
+				free_max_abv: parseFloat(fd.get("free_max_abv")),
+			};
+		}
+		if (basis === "plato_rate") {
+			return { rate_per_hl_plato: parseFloat(fd.get("rate_per_hl_plato")) };
+		}
+		if (basis === "plato_bands") {
+			return cfg.params || { bands: [] };
+		}
+		return cfg.params || {};
+	}
+
 	async function loadEconomy(panel) {
 		const examplesEl = panel.querySelector("#economy-examples");
 		const form = panel.querySelector("#economy-form");
 		const errEl = panel.querySelector("#economy-error");
-		const exampleABVs = [3.5, 4.5, 5.0, 5.5, 6.0, 8.0];
+		const paramsEl = panel.querySelector("#economy-params-fields");
+		const discountSel = panel.querySelector("#economy-discount");
+		const countryLabelEl = panel.querySelector("#economy-country-label");
+		let currentCfg = null;
 
-		function renderExamples(cfg) {
-			const rate = cfg.rate_sek;
-			const free = cfg.free_max_abv;
-			const discount = cfg.discount;
-			const rows = exampleABVs
-				.map((abv) => {
-					const sek =
-						abv <= free ? 0 : Math.round(abv * rate * discount * 100) / 100;
-					return (
+		async function renderExamples(cfg) {
+			const rows = [];
+			for (const abv of EXAMPLE_ABVS) {
+				try {
+					const preview = await api(
+						"/api/settings/tax-preview?abv=" +
+							encodeURIComponent(abv) +
+							"&og=" +
+							encodeURIComponent(EXAMPLE_OG) +
+							"&volume=1"
+					);
+					rows.push(
 						"<tr><td>" +
-						abv.toFixed(1) +
-						" %</td><td>" +
-						sek.toFixed(2) +
-						" " +
-						currencyPerLiter() +
-						"</td></tr>"
+							abv.toFixed(1) +
+							" %</td><td>" +
+							Number(preview.per_liter).toFixed(4) +
+							" " +
+							currencyPerLiter() +
+							"</td></tr>"
+					);
+				} catch (e) {
+					rows.push("<tr><td>" + abv.toFixed(1) + " %</td><td>—</td></tr>");
+				}
+			}
+			examplesEl.innerHTML =
+				"<p class=\"panel__lead\">" +
+				esc(t("js.economy.examples_lead_country", { country: countryLabel(cfg.country) })) +
+				"</p>" +
+				table([t("js.economy.examples_abv"), t("js.economy.examples_tax")], rows.join(""));
+		}
+
+		function fillDiscount(cfg) {
+			const opts = cfg.discount_options || [{ key: "full", label: "full" }];
+			discountSel.innerHTML = opts
+				.map((o) => {
+					const selected = o.key === cfg.discount_key ? " selected" : "";
+					return (
+						'<option value="' +
+						esc(o.key) +
+						'"' +
+						selected +
+						">" +
+						esc(discountLabel(o.key)) +
+						"</option>"
 					);
 				})
 				.join("");
-			examplesEl.innerHTML =
-				"<p class=\"panel__lead\">" +
-				esc(t("js.economy.examples_lead", { rate: rate, discount: discount })) +
-				"</p>" +
-				table([t("js.economy.examples_abv"), t("js.economy.examples_tax")], rows);
 		}
 
 		async function refresh() {
 			examplesEl.textContent = t("js.loading");
 			try {
 				const cfg = await api("/api/settings/tax-config");
-				form.querySelector('[name="rate_sek"]').value = cfg.rate_sek;
-				form.querySelector('[name="free_max_abv"]').value = cfg.free_max_abv;
-				form.querySelector('[name="discount"]').value = String(cfg.discount);
-				renderExamples(cfg);
+				currentCfg = cfg;
+				countryLabelEl.textContent =
+					t("economy.tax.active_country") + ": " + countryLabel(cfg.country);
+				form.querySelector("#economy-basis").value = cfg.basis || "";
+				renderParamFields(paramsEl, cfg);
+				fillDiscount(cfg);
+				await renderExamples(cfg);
 			} catch (e) {
 				examplesEl.textContent = e.message;
 			}
@@ -90,28 +256,25 @@
 			if (!canRoles(["superuser", "admin"])) {
 				return;
 			}
-			const fd = new FormData(form);
+			if (!currentCfg) {
+				return;
+			}
 			try {
+				const params = collectParams(form, currentCfg);
 				const cfg = await api("/api/settings/tax-config", {
 					method: "PUT",
 					body: JSON.stringify({
-						rate_sek: parseFloat(fd.get("rate_sek")),
-						free_max_abv: parseFloat(fd.get("free_max_abv")),
-						discount: parseFloat(fd.get("discount")),
+						params: params,
+						discount_key: discountSel.value,
 					}),
 				});
-				renderExamples(cfg);
+				currentCfg = cfg;
+				renderParamFields(paramsEl, cfg);
+				fillDiscount(cfg);
+				await renderExamples(cfg);
 			} catch (e) {
 				errEl.hidden = false;
 				errEl.textContent = e.message;
-			}
-		});
-		form.addEventListener("change", () => {
-			const rate = parseFloat(form.querySelector('[name="rate_sek"]').value);
-			const free = parseFloat(form.querySelector('[name="free_max_abv"]').value);
-			const discount = parseFloat(form.querySelector('[name="discount"]').value);
-			if (!Number.isNaN(rate) && !Number.isNaN(free) && !Number.isNaN(discount)) {
-				renderExamples({ rate_sek: rate, free_max_abv: free, discount: discount });
 			}
 		});
 		refresh();

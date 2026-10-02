@@ -43,12 +43,16 @@
 		const errEl = panel.querySelector("#settings-regional-error");
 		const currencySel = panel.querySelector("#settings-regional-currency");
 		const languageSel = panel.querySelector("#settings-regional-language");
+		const taxSel = panel.querySelector("#settings-regional-tax-country");
+		const gravitySel = panel.querySelector("#settings-regional-gravity");
 
 		async function refresh() {
 			try {
 				const cfg = await api("/api/settings/regional");
 				currencySel.value = cfg.currency_code || "SEK";
 				languageSel.value = cfg.language || "en";
+				taxSel.value = cfg.tax_country || "sv";
+				gravitySel.value = cfg.gravity_unit || "sg";
 			} catch (e) {
 				errEl.hidden = false;
 				errEl.textContent = e.message;
@@ -64,6 +68,8 @@
 					body: JSON.stringify({
 						currency_code: currencySel.value,
 						language: languageSel.value,
+						tax_country: taxSel.value,
+						gravity_unit: gravitySel.value,
 					}),
 				});
 				if (window.BH_I18N && typeof window.BH_I18N.applyRegional === "function") {
