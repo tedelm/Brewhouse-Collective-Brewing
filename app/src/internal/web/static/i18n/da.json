@@ -785,5 +785,15 @@
   "js.economy.help.vat": "Salgsmoms på leverancens netto efter landets momssats.",
   "inventory.vat_rate": "Indkøbsmoms (%)",
   "inventory.vat_rate_placeholder": "Landets standard",
-  "js.inventory.col.vat": "Indkøbsmoms"
+  "js.inventory.col.vat": "Indkøbsmoms",
+  "wizard.title": "Velkomstguide",
+  "wizard.lead": "Vælg regionale standarder, alkoholafgift og moms, før du går i gang.",
+  "wizard.step.regional": "Regionalt",
+  "wizard.step.alcohol_tax": "Alkoholafgift",
+  "wizard.step.vat": "Moms",
+  "wizard.step_of": "Trin {current} af {total}",
+  "wizard.next": "Næste",
+  "wizard.back": "Tilbage",
+  "wizard.skip": "Spring over",
+  "wizard.finish": "Afslut"
 }

@@ -231,6 +231,12 @@ type VATConfig struct {
 	RatePercent float64 `json:"rate_percent"`
 }
 
+// SetupWizardStatus reports whether the first-run regional/tax wizard is still needed.
+type SetupWizardStatus struct {
+	Needed bool   `json:"needed"`
+	Status string `json:"status"`
+}
+
 // PurchaseVATSummary is purchase VAT for a calendar month.
 type PurchaseVATSummary struct {
 	Month   string  `json:"month"`

@@ -785,5 +785,15 @@
   "js.economy.help.vat": "IVA de venta sobre el neto de entrega según el tipo del país.",
   "inventory.vat_rate": "IVA de compra (%)",
   "inventory.vat_rate_placeholder": "Por defecto del país",
-  "js.inventory.col.vat": "IVA de compra"
+  "js.inventory.col.vat": "IVA de compra",
+  "wizard.title": "Asistente de bienvenida",
+  "wizard.lead": "Elija valores regionales, impuesto sobre el alcohol e IVA antes de empezar.",
+  "wizard.step.regional": "Regional",
+  "wizard.step.alcohol_tax": "Impuesto sobre el alcohol",
+  "wizard.step.vat": "IVA",
+  "wizard.step_of": "Paso {current} de {total}",
+  "wizard.next": "Siguiente",
+  "wizard.back": "Atrás",
+  "wizard.skip": "Omitir",
+  "wizard.finish": "Finalizar"
 }

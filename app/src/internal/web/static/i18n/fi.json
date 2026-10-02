@@ -785,5 +785,15 @@
   "js.economy.help.vat": "Myynti-ALV toimituksen netosta maan ALV-kannalla.",
   "inventory.vat_rate": "Osto-ALV (%)",
   "inventory.vat_rate_placeholder": "Maan oletus",
-  "js.inventory.col.vat": "Osto-ALV"
+  "js.inventory.col.vat": "Osto-ALV",
+  "wizard.title": "Aloitusopas",
+  "wizard.lead": "Valitse alueelliset oletukset, alkoholivero ja ALV ennen aloittamista.",
+  "wizard.step.regional": "Alueellinen",
+  "wizard.step.alcohol_tax": "Alkoholivero",
+  "wizard.step.vat": "ALV",
+  "wizard.step_of": "Vaihe {current} / {total}",
+  "wizard.next": "Seuraava",
+  "wizard.back": "Takaisin",
+  "wizard.skip": "Ohita",
+  "wizard.finish": "Valmis"
 }

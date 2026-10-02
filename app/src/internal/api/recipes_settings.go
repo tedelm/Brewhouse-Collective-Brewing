@@ -439,6 +439,8 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		h.settingsBeerPrice(w, r, actor, parts[1:])
 	case "regional":
 		h.settingsRegional(w, r, actor, parts[1:])
+	case "setup-wizard":
+		h.settingsSetupWizard(w, r, actor, parts[1:])
 	case "hygiene-routines":
 		h.settingsHygiene(w, r, actor, parts[1:])
 	case "logo":
@@ -787,6 +789,36 @@ func (h *Handler) settingsRegional(w http.ResponseWriter, r *http.Request, actor
 	default:
 		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 	}
+}
+
+func (h *Handler) settingsSetupWizard(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {
+	if len(parts) == 0 {
+		if r.Method != http.MethodGet {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		status, err := h.settings.GetSetupWizardStatus(actor)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, status)
+		return
+	}
+	if len(parts) == 1 && parts[0] == "complete" {
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		status, err := h.settings.CompleteSetupWizard(actor)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, status)
+		return
+	}
+	writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
 }
 
 func (h *Handler) settingsMultipliers(w http.ResponseWriter, r *http.Request, actor service.Actor, parts []string) {

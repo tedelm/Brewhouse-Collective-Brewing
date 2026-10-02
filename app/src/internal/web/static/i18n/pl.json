@@ -785,5 +785,15 @@
   "js.economy.help.vat": "VAT sprzedaży od netto dostawy według stawki kraju.",
   "inventory.vat_rate": "VAT zakupu (%)",
   "inventory.vat_rate_placeholder": "Domyślnie kraju",
-  "js.inventory.col.vat": "VAT zakupu"
+  "js.inventory.col.vat": "VAT zakupu",
+  "wizard.title": "Kreator powitalny",
+  "wizard.lead": "Wybierz ustawienia regionalne, podatek alkoholowy i VAT przed rozpoczęciem.",
+  "wizard.step.regional": "Regionalne",
+  "wizard.step.alcohol_tax": "Podatek alkoholowy",
+  "wizard.step.vat": "VAT",
+  "wizard.step_of": "Krok {current} z {total}",
+  "wizard.next": "Dalej",
+  "wizard.back": "Wstecz",
+  "wizard.skip": "Pomiń",
+  "wizard.finish": "Zakończ"
 }

@@ -605,6 +605,94 @@ func (s *SettingsService) SumPurchaseVATForMonth(actor Actor, month string) (*Pu
 	return &PurchaseVATSummary{Month: month, VATTotal: total}, nil
 }
 
+const (
+	metaSetupWizard         = "setup_wizard"
+	setupWizardStatusComplete = "complete"
+)
+
+func (s *SettingsService) getMeta(key string) (string, error) {
+	var value string
+	err := s.db.QueryRow(`SELECT value FROM app_meta WHERE key = ?`, key).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("get app_meta %q: %w", key, err)
+	}
+	return value, nil
+}
+
+func (s *SettingsService) setMeta(key, value string) error {
+	_, err := s.db.Exec(
+		`INSERT INTO app_meta (key, value) VALUES (?, ?)
+		 ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+		key, value,
+	)
+	if err != nil {
+		return fmt.Errorf("set app_meta %q: %w", key, err)
+	}
+	return nil
+}
+
+func (s *SettingsService) accountIsAdmin(userID int64) (bool, error) {
+	if userID <= 0 {
+		return false, nil
+	}
+	var role string
+	err := s.db.QueryRow(`SELECT role FROM users WHERE id = ?`, userID).Scan(&role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return role == RoleAdmin, nil
+}
+
+// GetSetupWizardStatus returns whether the first-run wizard should be shown.
+// Needed when status is not complete and the account is (or can elevate to) admin.
+func (s *SettingsService) GetSetupWizardStatus(actor Actor) (*SetupWizardStatus, error) {
+	status, err := s.getMeta(metaSetupWizard)
+	if err != nil {
+		return nil, err
+	}
+	out := &SetupWizardStatus{Status: status, Needed: false}
+	if status == setupWizardStatusComplete {
+		return out, nil
+	}
+	if actor.IsAdmin() {
+		out.Needed = true
+		return out, nil
+	}
+	isAdmin, err := s.accountIsAdmin(actor.UserID)
+	if err != nil {
+		return nil, err
+	}
+	out.Needed = isAdmin
+	return out, nil
+}
+
+// CompleteSetupWizard marks the first-run wizard as finished.
+func (s *SettingsService) CompleteSetupWizard(actor Actor) (*SetupWizardStatus, error) {
+	if actor.IsAdmin() {
+		if err := s.setMeta(metaSetupWizard, setupWizardStatusComplete); err != nil {
+			return nil, err
+		}
+		return &SetupWizardStatus{Needed: false, Status: setupWizardStatusComplete}, nil
+	}
+	isAdmin, err := s.accountIsAdmin(actor.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrForbidden
+	}
+	if err := s.setMeta(metaSetupWizard, setupWizardStatusComplete); err != nil {
+		return nil, err
+	}
+	return &SetupWizardStatus{Needed: false, Status: setupWizardStatusComplete}, nil
+}
+
 // GetBeerPriceConfig returns min net SEK/L (defaults to 0 if missing).
 func (s *SettingsService) GetBeerPriceConfig() (*BeerPriceConfig, error) {
 	cfg := &BeerPriceConfig{}

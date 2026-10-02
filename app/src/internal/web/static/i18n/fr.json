@@ -785,5 +785,15 @@
   "js.economy.help.vat": "TVA de vente sur le net de livraison au taux du pays.",
   "inventory.vat_rate": "TVA d’achat (%)",
   "inventory.vat_rate_placeholder": "Défaut du pays",
-  "js.inventory.col.vat": "TVA d’achat"
+  "js.inventory.col.vat": "TVA d’achat",
+  "wizard.title": "Assistant de bienvenue",
+  "wizard.lead": "Choisissez les paramètres régionaux, la taxe alcool et la TVA avant de commencer.",
+  "wizard.step.regional": "Régional",
+  "wizard.step.alcohol_tax": "Taxe alcool",
+  "wizard.step.vat": "TVA",
+  "wizard.step_of": "Étape {current} sur {total}",
+  "wizard.next": "Suivant",
+  "wizard.back": "Retour",
+  "wizard.skip": "Passer",
+  "wizard.finish": "Terminer"
 }

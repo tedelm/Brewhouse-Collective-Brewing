@@ -785,5 +785,15 @@
   "js.economy.help.vat": "Sales VAT on delivery net for the tax jurisdiction rate.",
   "inventory.vat_rate": "Purchase VAT (%)",
   "inventory.vat_rate_placeholder": "Country default",
-  "js.inventory.col.vat": "Purchase VAT"
+  "js.inventory.col.vat": "Purchase VAT",
+  "wizard.title": "Welcome setup",
+  "wizard.lead": "Choose regional defaults, alcohol tax, and VAT before you start.",
+  "wizard.step.regional": "Regional",
+  "wizard.step.alcohol_tax": "Alcohol tax",
+  "wizard.step.vat": "VAT",
+  "wizard.step_of": "Step {current} of {total}",
+  "wizard.next": "Next",
+  "wizard.back": "Back",
+  "wizard.skip": "Skip",
+  "wizard.finish": "Finish"
 }

@@ -785,5 +785,15 @@
   "js.economy.help.vat": "Verkaufs-MwSt. auf dem Liefernetto zum Ländersatz.",
   "inventory.vat_rate": "Einkaufs-MwSt. (%)",
   "inventory.vat_rate_placeholder": "Länderstandard",
-  "js.inventory.col.vat": "Einkaufs-MwSt."
+  "js.inventory.col.vat": "Einkaufs-MwSt.",
+  "wizard.title": "Willkommens-Assistent",
+  "wizard.lead": "Wählen Sie regionale Vorgaben, Alkoholsteuer und MwSt., bevor Sie starten.",
+  "wizard.step.regional": "Regional",
+  "wizard.step.alcohol_tax": "Alkoholsteuer",
+  "wizard.step.vat": "MwSt.",
+  "wizard.step_of": "Schritt {current} von {total}",
+  "wizard.next": "Weiter",
+  "wizard.back": "Zurück",
+  "wizard.skip": "Überspringen",
+  "wizard.finish": "Fertig"
 }

@@ -785,5 +785,15 @@
   "js.economy.help.vat": "Salgsmoms på leveransens netto etter landets MVA-sats.",
   "inventory.vat_rate": "Innkjøps-MVA (%)",
   "inventory.vat_rate_placeholder": "Landets standard",
-  "js.inventory.col.vat": "Innkjøps-MVA"
+  "js.inventory.col.vat": "Innkjøps-MVA",
+  "wizard.title": "Velkomstveiviser",
+  "wizard.lead": "Velg regionale standarder, alkoholavgift og MVA før du starter.",
+  "wizard.step.regional": "Regionalt",
+  "wizard.step.alcohol_tax": "Alkoholavgift",
+  "wizard.step.vat": "MVA",
+  "wizard.step_of": "Steg {current} av {total}",
+  "wizard.next": "Neste",
+  "wizard.back": "Tilbake",
+  "wizard.skip": "Hopp over",
+  "wizard.finish": "Fullfør"
 }

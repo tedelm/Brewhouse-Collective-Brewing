@@ -785,5 +785,15 @@
   "js.economy.help.vat": "Försäljningsmoms på leveransens netto enligt landets momssats.",
   "inventory.vat_rate": "Inköpsmoms (%)",
   "inventory.vat_rate_placeholder": "Landets standard",
-  "js.inventory.col.vat": "Inköpsmoms"
+  "js.inventory.col.vat": "Inköpsmoms",
+  "wizard.title": "Välkomstguide",
+  "wizard.lead": "Välj regionala standarder, alkoholskatt och moms innan du börjar.",
+  "wizard.step.regional": "Regionalt",
+  "wizard.step.alcohol_tax": "Alkoholskatt",
+  "wizard.step.vat": "Moms",
+  "wizard.step_of": "Steg {current} av {total}",
+  "wizard.next": "Nästa",
+  "wizard.back": "Tillbaka",
+  "wizard.skip": "Hoppa över",
+  "wizard.finish": "Klar"
 }

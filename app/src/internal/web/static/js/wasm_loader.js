@@ -502,6 +502,33 @@
 		if (window.BH_I18N && typeof window.BH_I18N.applyI18n === "function") {
 			window.BH_I18N.applyI18n(document);
 		}
+		maybeRunSetupWizard();
+	}
+
+	async function maybeRunSetupWizard() {
+		try {
+			const res = await fetch("/api/settings/setup-wizard", { headers: authHeaders() });
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || !data.needed) {
+				return;
+			}
+			if (canElevate() && currentRole() !== "admin") {
+				try {
+					await setElevated(true);
+				} catch (err) {
+					console.error("Setup wizard elevate failed:", err);
+					return;
+				}
+			}
+			if (window.BrewhouseSetupWizard && typeof window.BrewhouseSetupWizard.run === "function") {
+				await window.BrewhouseSetupWizard.run();
+				applyNavVisibility(currentRole());
+				syncAdminToggle();
+				await loadRegionalSettings();
+			}
+		} catch (err) {
+			console.error("Setup wizard check failed:", err);
+		}
 	}
 
 	async function loadRegionalSettings() {

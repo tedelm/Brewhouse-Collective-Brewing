@@ -2182,3 +2182,32 @@ input.btn[type="month"]::-webkit-calendar-picker-indicator {
 	color: #1f3d2b;
 	outline: none;
 }
+
+.setup-wizard {
+	max-width: 32rem;
+	width: calc(100vw - 2rem);
+}
+
+.setup-wizard__header {
+	margin-bottom: 0.75rem;
+}
+
+.setup-wizard__steps {
+	margin: 0.35rem 0 0;
+	font-size: 0.85rem;
+	color: #6b7280;
+}
+
+.setup-wizard__step h3 {
+	margin: 0 0 0.75rem;
+	font-size: 1.05rem;
+}
+
+.setup-wizard__actions {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+}
+
+.setup-wizard__actions #setup-wizard-skip {
+	margin-right: auto;
+}

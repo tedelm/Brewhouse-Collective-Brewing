@@ -851,6 +851,36 @@ func ensureRecipeVATColumns(db *sql.DB) error {
 		`ALTER TABLE recipes ADD COLUMN vat_rate REAL`)
 }
 
+// ensureSetupWizardMeta marks the first-run wizard complete on already-used installs.
+// Fresh DBs (bootstrap_admin still present) leave the key unset so the wizard is needed.
+// Call after EnsureDefaultAdmin so brand-new installs have bootstrap rows first.
+func EnsureSetupWizardMeta(db *sql.DB) error {
+	return ensureSetupWizardMeta(db)
+}
+
+func ensureSetupWizardMeta(db *sql.DB) error {
+	var existing string
+	err := db.QueryRow(`SELECT value FROM app_meta WHERE key = ?`, "setup_wizard").Scan(&existing)
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+	var bootstrapCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM bootstrap_admin`).Scan(&bootstrapCount); err != nil {
+		return err
+	}
+	if bootstrapCount > 0 {
+		return nil
+	}
+	_, err = db.Exec(
+		`INSERT INTO app_meta (key, value) VALUES (?, ?)`,
+		"setup_wizard", "complete",
+	)
+	return err
+}
+
 func seedDefaults(db *sql.DB) error {
 	var count int
 	if err := seedTaxCountryRows(db); err != nil {
