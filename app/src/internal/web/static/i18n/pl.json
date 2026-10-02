@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "Stawka VAT pozycji",
+  "orders.vat_rate": "Stawka VAT (%)",
+  "delivery.preview.vat": "VAT sprzedaży",
+  "economy.vat.title": "Stawka VAT",
+  "economy.vat.lead": "VAT sprzedaży i zakupu w procentach dla aktywnej jurysdykcji podatkowej.",
+  "economy.vat.rate": "Stawka VAT (%)",
+  "economy.vat.sales": "VAT sprzedaży (dostawy)",
+  "economy.vat.purchase": "VAT zakupu (zamówienia)",
+  "economy.deliveries.vat": "VAT sprzedaży",
+  "js.orders.vat": "VAT",
+  "js.orders.vat_total": "VAT zakupu",
+  "js.orders.set_vat": "Ustaw VAT",
+  "js.orders.vat_invalid": "Stawka VAT musi być między 0 a 100",
+  "js.delivery.col.vat": "VAT sprzedaży",
+  "js.economy.col.vat": "VAT sprzedaży",
+  "js.economy.help.vat": "VAT sprzedaży od netto dostawy według stawki kraju."
 }

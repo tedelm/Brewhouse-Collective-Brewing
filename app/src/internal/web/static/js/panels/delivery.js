@@ -54,12 +54,14 @@
 		const previewCost = panel.querySelector("#delivery-preview-cost");
 		const previewTax = panel.querySelector("#delivery-preview-tax");
 		const previewNet = panel.querySelector("#delivery-preview-net");
+		const previewVAT = panel.querySelector("#delivery-preview-vat");
 		const previewProfit = panel.querySelector("#delivery-preview-profit");
 		const previewPerL = panel.querySelector("#delivery-preview-per-l");
 		let byID = {};
 		let taxPreviewTimer = null;
 		let previewOG = null;
 		let previewCostTotal = 0;
+		let vatRatePercent = 25;
 
 		function fillFG(recipe) {
 			const defs = window.BrewhouseCore.gravityInputDefaults
@@ -73,6 +75,9 @@
 			previewCost.textContent = "—";
 			previewTax.textContent = "—";
 			previewNet.textContent = "—";
+			if (previewVAT) {
+				previewVAT.textContent = "—";
+			}
 			previewProfit.textContent = "—";
 			previewPerL.textContent = "—";
 		}
@@ -112,6 +117,9 @@
 			previewABV.textContent = abv.toFixed(1) + " %";
 			previewCost.textContent = fmtMoney(cost);
 			previewNet.textContent = fmtMoney(net);
+			if (previewVAT) {
+				previewVAT.textContent = fmtMoney((net * vatRatePercent) / 100);
+			}
 			previewProfit.textContent = fmtMoney(net - cost);
 			previewPerL.textContent = fmtMoney(perL);
 			previewTax.textContent = "…";
@@ -160,10 +168,14 @@
 		}
 
 		async function loadPricingControls() {
-			const [mults, beer] = await Promise.all([
+			const [mults, beer, vatCfg] = await Promise.all([
 				api("/api/settings/multipliers?active=1"),
 				api("/api/settings/beer-price"),
+				api("/api/settings/vat-config").catch(() => null),
 			]);
+			if (vatCfg && vatCfg.rate_percent != null) {
+				vatRatePercent = Number(vatCfg.rate_percent) || 0;
+			}
 			const listMults = mults || [];
 			multSel.innerHTML = listMults
 				.map((m) => {
@@ -226,6 +238,7 @@
 						t("js.delivery.col.cost"),
 						t("js.delivery.col.tax"),
 						t("js.delivery.col.net"),
+						t("js.delivery.col.vat"),
 						t("js.delivery.col.profit"),
 						"",
 					],
@@ -269,6 +282,8 @@
 								fmtMoney(r.tax, cur) +
 								"</td><td>" +
 								fmtMoney(r.net, cur) +
+								"</td><td>" +
+								fmtMoney(r.vat_sales, cur) +
 								"</td><td>" +
 								profit +
 								"</td><td>" +

@@ -391,6 +391,7 @@ func (s *InventoryService) insertOrderLineTx(db execQuerier, orderID, itemID int
 		return fmt.Errorf("get inventory: %w", err)
 	}
 	effectiveCost := EffectiveCost(item.CostPrice, adjustPercent)
+	vatRate := s.activeVATRatePercent()
 	if breweryID != nil {
 		var bid int64
 		err = db.QueryRow(`SELECT id FROM breweries WHERE id = ?`, *breweryID).Scan(&bid)
@@ -415,18 +416,32 @@ func (s *InventoryService) insertOrderLineTx(db execQuerier, orderID, itemID int
 		if err != nil {
 			return fmt.Errorf("update order line: %w", err)
 		}
-		return nil
+		return recalcOrderLineVAT(db, existingID)
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
+	vatAmount := orderLineVATAmount(effectiveCost*qty, vatRate)
 	_, err = db.Exec(
-		`INSERT INTO inventory_order_lines (order_id, inventory_item_id, item_name, category, qty, cost_price, brewery_id, recipe_id)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		orderID, item.ID, item.Name, item.Category, qty, effectiveCost, breweryID, recipeID,
+		`INSERT INTO inventory_order_lines (order_id, inventory_item_id, item_name, category, qty, cost_price, vat_rate, vat_amount, brewery_id, recipe_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		orderID, item.ID, item.Name, item.Category, qty, effectiveCost, vatRate, vatAmount, breweryID, recipeID,
 	)
 	if err != nil {
 		return fmt.Errorf("insert order line: %w", err)
+	}
+	return nil
+}
+
+func recalcOrderLineVAT(db execQuerier, lineID int64) error {
+	_, err := db.Exec(
+		`UPDATE inventory_order_lines
+		 SET vat_amount = ROUND(COALESCE(cost_price, 0) * COALESCE(ordered_qty, qty) * COALESCE(vat_rate, 0) / 100.0, 6)
+		 WHERE id = ?`,
+		lineID,
+	)
+	if err != nil {
+		return fmt.Errorf("recalc order line vat: %w", err)
 	}
 	return nil
 }
@@ -785,6 +800,7 @@ func (s *InventoryService) ListOrders() ([]InventoryOrder, error) {
 		}
 		o.Lines = lines
 		o.Total = orderLinesTotal(lines)
+		o.VATTotal = orderLinesVATTotal(lines)
 		out = append(out, o)
 	}
 	return out, rows.Err()
@@ -847,6 +863,7 @@ func (s *InventoryService) GetOrder(id int64) (*InventoryOrder, error) {
 	}
 	o.Lines = lines
 	o.Total = orderLinesTotal(lines)
+	o.VATTotal = orderLinesVATTotal(lines)
 	return o, nil
 }
 
@@ -856,6 +873,32 @@ func orderLinesTotal(lines []InventoryOrderLine) float64 {
 		total += line.LineCost
 	}
 	return total
+}
+
+func orderLinesVATTotal(lines []InventoryOrderLine) float64 {
+	var total float64
+	for _, line := range lines {
+		total += line.VATAmount
+	}
+	return total
+}
+
+func orderLineVATAmount(lineCost, vatRate float64) float64 {
+	return math.Round(lineCost*vatRate/100*1e6) / 1e6
+}
+
+func (s *InventoryService) activeVATRatePercent() float64 {
+	var country string
+	_ = s.db.QueryRow(`SELECT tax_country FROM regional_config WHERE id = 1`).Scan(&country)
+	if country == "" {
+		country = "sv"
+	}
+	var rate float64
+	err := s.db.QueryRow(`SELECT rate_percent FROM vat_config WHERE country = ?`, country).Scan(&rate)
+	if err != nil {
+		return 25
+	}
+	return rate
 }
 
 func orderLineEffectiveQty(line InventoryOrderLine) float64 {
@@ -868,7 +911,8 @@ func orderLineEffectiveQty(line InventoryOrderLine) float64 {
 func (s *InventoryService) orderLines(orderID int64) ([]InventoryOrderLine, error) {
 	rows, err := s.db.Query(
 		`SELECT l.id, l.order_id, l.inventory_item_id, l.item_name, l.category, l.qty, l.ordered_qty,
-		        COALESCE(l.cost_price, 0), COALESCE(i.unit, ''), COALESCE(i.link, ''),
+		        COALESCE(l.cost_price, 0), COALESCE(l.vat_rate, 0), COALESCE(l.vat_amount, 0),
+		        COALESCE(i.unit, ''), COALESCE(i.link, ''),
 		        l.brewery_id, COALESCE(b.name, ''), l.recipe_id
 		 FROM inventory_order_lines l
 		 LEFT JOIN inventory_items i ON i.id = l.inventory_item_id
@@ -889,7 +933,7 @@ func (s *InventoryService) orderLines(orderID int64) ([]InventoryOrderLine, erro
 		var orderedQty sql.NullFloat64
 		if err := rows.Scan(
 			&line.ID, &line.OrderID, &itemID, &line.ItemName, &line.Category, &line.Qty, &orderedQty,
-			&line.CostPrice, &line.Unit, &line.Link, &breweryID, &line.BreweryName, &recipeID,
+			&line.CostPrice, &line.VATRate, &line.VATAmount, &line.Unit, &line.Link, &breweryID, &line.BreweryName, &recipeID,
 		); err != nil {
 			return nil, err
 		}
@@ -951,6 +995,9 @@ func (s *InventoryService) UpdateOrderLineOrderedQty(actor Actor, orderID, lineI
 	if err != nil {
 		return nil, fmt.Errorf("update ordered qty: %w", err)
 	}
+	if err := recalcOrderLineVAT(s.db, lineID); err != nil {
+		return nil, err
+	}
 	if err := s.touchOrderUpdatedAt(orderID); err != nil {
 		return nil, err
 	}
@@ -992,6 +1039,54 @@ func (s *InventoryService) UpdateOrderLineCostPrice(actor Actor, orderID, lineID
 	)
 	if err != nil {
 		return nil, fmt.Errorf("update cost price: %w", err)
+	}
+	if err := recalcOrderLineVAT(s.db, lineID); err != nil {
+		return nil, err
+	}
+	if err := s.touchOrderUpdatedAt(orderID); err != nil {
+		return nil, err
+	}
+	return s.GetOrder(orderID)
+}
+
+// UpdateOrderLineVATRate sets the VAT rate percent on a planning, paused, or ordered line.
+func (s *InventoryService) UpdateOrderLineVATRate(actor Actor, orderID, lineID int64, vatRate float64) (*InventoryOrder, error) {
+	ok, err := s.access.CanManageInventory(actor)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrForbidden
+	}
+	if vatRate < 0 || vatRate > 100 {
+		return nil, fmt.Errorf("vat rate must be between 0 and 100")
+	}
+	order, err := s.GetOrder(orderID)
+	if err != nil {
+		return nil, err
+	}
+	if order.Status != OrderStatusPlanning && order.Status != OrderStatusOrdered && order.Status != OrderStatusPaused {
+		return nil, fmt.Errorf("order is completed")
+	}
+	var found bool
+	for _, line := range order.Lines {
+		if line.ID == lineID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, ErrNotFound
+	}
+	_, err = s.db.Exec(
+		`UPDATE inventory_order_lines SET vat_rate = ? WHERE id = ? AND order_id = ?`,
+		vatRate, lineID, orderID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update vat rate: %w", err)
+	}
+	if err := recalcOrderLineVAT(s.db, lineID); err != nil {
+		return nil, err
 	}
 	if err := s.touchOrderUpdatedAt(orderID); err != nil {
 		return nil, err

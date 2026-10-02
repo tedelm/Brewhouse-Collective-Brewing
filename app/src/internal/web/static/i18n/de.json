@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "MwSt.-Satz der Position",
+  "orders.vat_rate": "MwSt.-Satz (%)",
+  "delivery.preview.vat": "Verkaufs-MwSt.",
+  "economy.vat.title": "MwSt.-Satz",
+  "economy.vat.lead": "Verkaufs- und Einkaufs-MwSt. in Prozent für die aktive Steuerjurisdiktion.",
+  "economy.vat.rate": "MwSt.-Satz (%)",
+  "economy.vat.sales": "Verkaufs-MwSt. (Lieferungen)",
+  "economy.vat.purchase": "Einkaufs-MwSt. (Bestellungen)",
+  "economy.deliveries.vat": "Verkaufs-MwSt.",
+  "js.orders.vat": "MwSt.",
+  "js.orders.vat_total": "Einkaufs-MwSt.",
+  "js.orders.set_vat": "MwSt. setzen",
+  "js.orders.vat_invalid": "MwSt.-Satz muss zwischen 0 und 100 liegen",
+  "js.delivery.col.vat": "Verkaufs-MwSt.",
+  "js.economy.col.vat": "Verkaufs-MwSt.",
+  "js.economy.help.vat": "Verkaufs-MwSt. auf dem Liefernetto zum Ländersatz."
 }

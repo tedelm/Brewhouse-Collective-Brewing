@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "Taux de TVA de la ligne",
+  "orders.vat_rate": "Taux de TVA (%)",
+  "delivery.preview.vat": "TVA de vente",
+  "economy.vat.title": "Taux de TVA",
+  "economy.vat.lead": "TVA de vente et d’achat en pourcentage pour la juridiction fiscale active.",
+  "economy.vat.rate": "Taux de TVA (%)",
+  "economy.vat.sales": "TVA de vente (livraisons)",
+  "economy.vat.purchase": "TVA d’achat (commandes)",
+  "economy.deliveries.vat": "TVA de vente",
+  "js.orders.vat": "TVA",
+  "js.orders.vat_total": "TVA d’achat",
+  "js.orders.set_vat": "Définir la TVA",
+  "js.orders.vat_invalid": "Le taux de TVA doit être entre 0 et 100",
+  "js.delivery.col.vat": "TVA de vente",
+  "js.economy.col.vat": "TVA de vente",
+  "js.economy.help.vat": "TVA de vente sur le net de livraison au taux du pays."
 }

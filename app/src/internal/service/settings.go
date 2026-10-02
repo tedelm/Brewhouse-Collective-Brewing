@@ -518,6 +518,93 @@ func (s *SettingsService) UpdateRegionalConfig(actor Actor, currencyCode, langua
 	return s.GetRegionalConfig()
 }
 
+// GetVATConfig returns VAT rate for the active tax country (defaults 25%).
+func (s *SettingsService) GetVATConfig() (*VATConfig, error) {
+	regional, err := s.GetRegionalConfig()
+	if err != nil {
+		return nil, err
+	}
+	return s.GetVATConfigForCountry(regional.TaxCountry)
+}
+
+// GetVATConfigForCountry loads one country's VAT rate.
+func (s *SettingsService) GetVATConfigForCountry(country string) (*VATConfig, error) {
+	if !tax.ValidCountry(country) {
+		country = tax.CountrySV
+	}
+	cfg := &VATConfig{Country: country}
+	err := s.db.QueryRow(
+		`SELECT rate_percent FROM vat_config WHERE country = ?`, country,
+	).Scan(&cfg.RatePercent)
+	if errors.Is(err, sql.ErrNoRows) {
+		cfg.RatePercent = 25
+		return cfg, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get vat config: %w", err)
+	}
+	return cfg, nil
+}
+
+// UpdateVATConfig updates the active country's VAT rate percent.
+func (s *SettingsService) UpdateVATConfig(actor Actor, ratePercent float64) (*VATConfig, error) {
+	ok, err := s.access.CanManageEconomy(actor)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrForbidden
+	}
+	if ratePercent < 0 || ratePercent > 100 {
+		return nil, fmt.Errorf("rate_percent must be between 0 and 100")
+	}
+	regional, err := s.GetRegionalConfig()
+	if err != nil {
+		return nil, err
+	}
+	country := regional.TaxCountry
+	if !tax.ValidCountry(country) {
+		return nil, fmt.Errorf("invalid tax country")
+	}
+	_, err = s.db.Exec(
+		`INSERT INTO vat_config (country, rate_percent) VALUES (?, ?)
+		 ON CONFLICT(country) DO UPDATE SET rate_percent = excluded.rate_percent`,
+		country, ratePercent,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetVATConfigForCountry(country)
+}
+
+// SumPurchaseVATForMonth sums order-line VAT for orders ordered/updated in YYYY-MM
+// with status ordered or completed.
+func (s *SettingsService) SumPurchaseVATForMonth(actor Actor, month string) (*PurchaseVATSummary, error) {
+	if err := s.access.RequireEconomyView(actor); err != nil {
+		return nil, err
+	}
+	if len(month) != 7 || month[4] != '-' {
+		return nil, fmt.Errorf("month must be YYYY-MM")
+	}
+	start := month + "-01"
+	var total float64
+	err := s.db.QueryRow(
+		`SELECT COALESCE(SUM(l.vat_amount), 0)
+		 FROM inventory_order_lines l
+		 INNER JOIN inventory_orders o ON o.id = l.order_id
+		 WHERE o.status IN ('ordered', 'completed')
+		   AND (
+		     (o.ordered_at IS NOT NULL AND o.ordered_at >= ? AND o.ordered_at < date(?, '+1 month'))
+		     OR (o.ordered_at IS NULL AND o.updated_at >= ? AND o.updated_at < date(?, '+1 month'))
+		   )`,
+		start, start, start, start,
+	).Scan(&total)
+	if err != nil {
+		return nil, fmt.Errorf("sum purchase vat: %w", err)
+	}
+	return &PurchaseVATSummary{Month: month, VATTotal: total}, nil
+}
+
 // GetBeerPriceConfig returns min net SEK/L (defaults to 0 if missing).
 func (s *SettingsService) GetBeerPriceConfig() (*BeerPriceConfig, error) {
 	cfg := &BeerPriceConfig{}

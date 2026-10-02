@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "Tipo de IVA de la línea",
+  "orders.vat_rate": "Tipo de IVA (%)",
+  "delivery.preview.vat": "IVA de venta",
+  "economy.vat.title": "Tipo de IVA",
+  "economy.vat.lead": "IVA de venta y compra en porcentaje para la jurisdicción fiscal activa.",
+  "economy.vat.rate": "Tipo de IVA (%)",
+  "economy.vat.sales": "IVA de venta (entregas)",
+  "economy.vat.purchase": "IVA de compra (pedidos)",
+  "economy.deliveries.vat": "IVA de venta",
+  "js.orders.vat": "IVA",
+  "js.orders.vat_total": "IVA de compra",
+  "js.orders.set_vat": "Definir IVA",
+  "js.orders.vat_invalid": "El tipo de IVA debe estar entre 0 y 100",
+  "js.delivery.col.vat": "IVA de venta",
+  "js.economy.col.vat": "IVA de venta",
+  "js.economy.help.vat": "IVA de venta sobre el neto de entrega según el tipo del país."
 }

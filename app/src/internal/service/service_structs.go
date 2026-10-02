@@ -137,6 +137,7 @@ type InventoryLogEntry struct {
 }
 
 // InventoryOrder is a purchase / wishlist order.
+// InventoryOrder is a purchase wishlist / order.
 type InventoryOrder struct {
 	ID              int64                `json:"id"`
 	Status          string               `json:"status"`
@@ -147,6 +148,7 @@ type InventoryOrder struct {
 	UpdatedAt       string               `json:"updated_at"`
 	OrderedAt       *string              `json:"ordered_at,omitempty"`
 	Total           float64              `json:"total"`
+	VATTotal        float64              `json:"vat_total"`
 	Lines           []InventoryOrderLine `json:"lines,omitempty"`
 }
 
@@ -161,6 +163,8 @@ type InventoryOrderLine struct {
 	OrderedQty      *float64 `json:"ordered_qty,omitempty"`
 	CostPrice       float64  `json:"cost_price"`
 	LineCost        float64  `json:"line_cost"`
+	VATRate         float64  `json:"vat_rate"`
+	VATAmount       float64  `json:"vat_amount"`
 	Unit            string   `json:"unit"`
 	Link            string   `json:"link,omitempty"`
 	BreweryID       *int64   `json:"brewery_id,omitempty"`
@@ -218,6 +222,18 @@ type TaxPreview struct {
 	Plato    float64 `json:"plato"`
 	PerLiter float64 `json:"per_liter"`
 	Total    float64 `json:"total"`
+}
+
+// VATConfig is the sales/purchase VAT rate for a tax country.
+type VATConfig struct {
+	Country     string  `json:"country"`
+	RatePercent float64 `json:"rate_percent"`
+}
+
+// PurchaseVATSummary is purchase VAT for a calendar month.
+type PurchaseVATSummary struct {
+	Month   string  `json:"month"`
+	VATTotal float64 `json:"vat_total"`
 }
 
 // BeerPriceConfig holds the minimum net sale price per liter (SEK).
@@ -289,6 +305,8 @@ type Recipe struct {
 	Tax              *float64           `json:"tax,omitempty"`
 	Net              *float64           `json:"net,omitempty"`
 	CurrencyCode     string             `json:"currency_code,omitempty"`
+	VATSales         *float64           `json:"vat_sales,omitempty"`
+	VATRate          *float64           `json:"vat_rate,omitempty"`
 	CreatedBy        *int64             `json:"created_by,omitempty"`
 	CreatedAt        string             `json:"created_at"`
 	DeliveredAt      *string            `json:"delivered_at,omitempty"`

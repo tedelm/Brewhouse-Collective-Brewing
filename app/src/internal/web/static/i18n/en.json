@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "Line VAT rate",
+  "orders.vat_rate": "VAT rate (%)",
+  "delivery.preview.vat": "Sales VAT",
+  "economy.vat.title": "VAT rate",
+  "economy.vat.lead": "Sales and purchase VAT percent for the active tax jurisdiction.",
+  "economy.vat.rate": "VAT rate (%)",
+  "economy.vat.sales": "Sales VAT (deliveries)",
+  "economy.vat.purchase": "Purchase VAT (orders)",
+  "economy.deliveries.vat": "Sales VAT",
+  "js.orders.vat": "VAT",
+  "js.orders.vat_total": "Purchase VAT",
+  "js.orders.set_vat": "Set VAT",
+  "js.orders.vat_invalid": "VAT rate must be between 0 and 100",
+  "js.delivery.col.vat": "Sales VAT",
+  "js.economy.col.vat": "Sales VAT",
+  "js.economy.help.vat": "Sales VAT on delivery net for the tax jurisdiction rate."
 }

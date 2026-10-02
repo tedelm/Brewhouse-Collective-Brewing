@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "Rivin ALV-kanta",
+  "orders.vat_rate": "ALV-kanta (%)",
+  "delivery.preview.vat": "Myynti-ALV",
+  "economy.vat.title": "ALV-kanta",
+  "economy.vat.lead": "Myynti- ja osto-ALV prosentteina aktiiviselle verojurisdiktiolle.",
+  "economy.vat.rate": "ALV-kanta (%)",
+  "economy.vat.sales": "Myynti-ALV (toimitukset)",
+  "economy.vat.purchase": "Osto-ALV (tilaukset)",
+  "economy.deliveries.vat": "Myynti-ALV",
+  "js.orders.vat": "ALV",
+  "js.orders.vat_total": "Osto-ALV",
+  "js.orders.set_vat": "Aseta ALV",
+  "js.orders.vat_invalid": "ALV-kannan on oltava välillä 0–100",
+  "js.delivery.col.vat": "Myynti-ALV",
+  "js.economy.col.vat": "Myynti-ALV",
+  "js.economy.help.vat": "Myynti-ALV toimituksen netosta maan ALV-kannalla."
 }

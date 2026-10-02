@@ -17,4 +17,16 @@
 		<p class="panel__error" id="economy-error" hidden></p>
 	</form>
 	<div class="panel__body" id="economy-examples" data-i18n="common.loading">Loading…</div>
+	<header class="panel__header panel__header--section">
+		<h2 class="panel__title" data-i18n="economy.vat.title">VAT rate</h2>
+		<p class="panel__lead" data-i18n="economy.vat.lead">Sales and purchase VAT percent for the active tax jurisdiction.</p>
+	</header>
+	<form class="panel__form" id="economy-vat-form" data-require-roles="admin">
+		<p class="panel__lead" id="economy-vat-country-label"></p>
+		<label><span data-i18n="economy.vat.rate">VAT rate (%)</span>
+			<input name="rate_percent" id="economy-vat-rate" type="number" step="0.1" min="0" max="100" required>
+		</label>
+		<button type="submit" class="btn btn--primary" data-i18n="common.save">Save</button>
+		<p class="panel__error" id="economy-vat-error" hidden></p>
+	</form>
 </section>

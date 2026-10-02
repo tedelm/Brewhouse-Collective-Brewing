@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "Radens momssats",
+  "orders.vat_rate": "Momssats (%)",
+  "delivery.preview.vat": "Försäljningsmoms",
+  "economy.vat.title": "Momssats",
+  "economy.vat.lead": "Försäljnings- och inköpsmoms i procent för aktiv skattemyndighet.",
+  "economy.vat.rate": "Momssats (%)",
+  "economy.vat.sales": "Försäljningsmoms (leveranser)",
+  "economy.vat.purchase": "Inköpsmoms (ordrar)",
+  "economy.deliveries.vat": "Försäljningsmoms",
+  "js.orders.vat": "Moms",
+  "js.orders.vat_total": "Inköpsmoms",
+  "js.orders.set_vat": "Sätt moms",
+  "js.orders.vat_invalid": "Momssatsen måste vara mellan 0 och 100",
+  "js.delivery.col.vat": "Försäljningsmoms",
+  "js.economy.col.vat": "Försäljningsmoms",
+  "js.economy.help.vat": "Försäljningsmoms på leveransens netto enligt landets momssats."
 }

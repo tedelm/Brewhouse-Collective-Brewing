@@ -766,5 +766,21 @@
   "brewday.og_plato": "OG (°Plato)",
   "delivery.fg_plato": "FG (°Plato)",
   "common.og_plato": "OG (°P)",
-  "common.fg_plato": "FG (°P)"
+  "common.fg_plato": "FG (°P)",
+  "orders.line_vat_title": "Linjens MVA-sats",
+  "orders.vat_rate": "MVA-sats (%)",
+  "delivery.preview.vat": "Salgsmoms",
+  "economy.vat.title": "MVA-sats",
+  "economy.vat.lead": "Salgs- og innkjøps-MVA i prosent for aktiv skattejurisdiksjon.",
+  "economy.vat.rate": "MVA-sats (%)",
+  "economy.vat.sales": "Salgsmoms (leveranser)",
+  "economy.vat.purchase": "Innkjøpsmoms (ordrer)",
+  "economy.deliveries.vat": "Salgsmoms",
+  "js.orders.vat": "MVA",
+  "js.orders.vat_total": "Innkjøpsmoms",
+  "js.orders.set_vat": "Sett MVA",
+  "js.orders.vat_invalid": "MVA-satsen må være mellom 0 og 100",
+  "js.delivery.col.vat": "Salgsmoms",
+  "js.economy.col.vat": "Salgsmoms",
+  "js.economy.help.vat": "Salgsmoms på leveransens netto etter landets MVA-sats."
 }

@@ -128,6 +128,10 @@ func migrate(db *sql.DB) error {
 			params_json TEXT NOT NULL,
 			discount_key TEXT NOT NULL DEFAULT 'full'
 		)`,
+		`CREATE TABLE IF NOT EXISTS vat_config (
+			country TEXT PRIMARY KEY,
+			rate_percent REAL NOT NULL
+		)`,
 		`CREATE TABLE IF NOT EXISTS beer_price_config (
 			id INTEGER PRIMARY KEY CHECK (id = 1),
 			min_net_sek_per_liter REAL NOT NULL
@@ -180,6 +184,8 @@ func migrate(db *sql.DB) error {
 			tax REAL,
 			net REAL,
 			currency_code TEXT NOT NULL DEFAULT '',
+			vat_sales REAL,
+			vat_rate REAL,
 			created_by INTEGER,
 			created_at TEXT NOT NULL,
 			delivered_at TEXT,
@@ -197,6 +203,8 @@ func migrate(db *sql.DB) error {
 			qty REAL NOT NULL,
 			ordered_qty REAL,
 			cost_price REAL NOT NULL DEFAULT 0,
+			vat_rate REAL NOT NULL DEFAULT 0,
+			vat_amount REAL NOT NULL DEFAULT 0,
 			brewery_id INTEGER,
 			recipe_id INTEGER,
 			FOREIGN KEY (order_id) REFERENCES inventory_orders(id) ON DELETE CASCADE,
@@ -320,6 +328,15 @@ func migrate(db *sql.DB) error {
 	}
 	if err := ensureRegionalGravityUnit(db); err != nil {
 		return fmt.Errorf("ensure regional gravity_unit: %w", err)
+	}
+	if err := ensureVATConfig(db); err != nil {
+		return fmt.Errorf("ensure vat_config: %w", err)
+	}
+	if err := ensureOrderLineVATColumns(db); err != nil {
+		return fmt.Errorf("ensure order line vat: %w", err)
+	}
+	if err := ensureRecipeVATColumns(db); err != nil {
+		return fmt.Errorf("ensure recipes vat: %w", err)
 	}
 
 	if err := seedDefaults(db); err != nil {
@@ -748,9 +765,88 @@ func seedTaxCountryRows(db *sql.DB) error {
 	return nil
 }
 
+func seedVATConfigRows(db *sql.DB) error {
+	rows := []struct {
+		country string
+		rate    float64
+	}{
+		{"sv", 25},
+		{"nb", 25},
+		{"da", 25},
+		{"fi", 25.5},
+		{"de", 19},
+		{"es", 21},
+		{"fr", 20},
+		{"pl", 23},
+	}
+	for _, row := range rows {
+		if _, err := db.Exec(
+			`INSERT OR IGNORE INTO vat_config (country, rate_percent) VALUES (?, ?)`,
+			row.country, row.rate,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureVATConfig creates vat_config and seeds country rates.
+func ensureVATConfig(db *sql.DB) error {
+	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS vat_config (
+		country TEXT PRIMARY KEY,
+		rate_percent REAL NOT NULL
+	)`); err != nil {
+		return err
+	}
+	return seedVATConfigRows(db)
+}
+
+// ensureOrderLineVATColumns adds purchase VAT fields and backfills from active country rate.
+func ensureOrderLineVATColumns(db *sql.DB) error {
+	if err := addColumnIfMissing(db, "inventory_order_lines", "vat_rate",
+		`ALTER TABLE inventory_order_lines ADD COLUMN vat_rate REAL NOT NULL DEFAULT 0`); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(db, "inventory_order_lines", "vat_amount",
+		`ALTER TABLE inventory_order_lines ADD COLUMN vat_amount REAL NOT NULL DEFAULT 0`); err != nil {
+		return err
+	}
+	var country string
+	err := db.QueryRow(`SELECT tax_country FROM regional_config WHERE id = 1`).Scan(&country)
+	if err != nil || country == "" {
+		country = "sv"
+	}
+	var rate float64
+	err = db.QueryRow(`SELECT rate_percent FROM vat_config WHERE country = ?`, country).Scan(&rate)
+	if err != nil {
+		rate = 25
+	}
+	_, err = db.Exec(
+		`UPDATE inventory_order_lines
+		 SET vat_rate = ?,
+		     vat_amount = ROUND(COALESCE(cost_price, 0) * COALESCE(ordered_qty, qty) * ? / 100.0, 6)
+		 WHERE vat_rate = 0 AND vat_amount = 0`,
+		rate, rate,
+	)
+	return err
+}
+
+// ensureRecipeVATColumns adds sales VAT snapshot fields on recipes.
+func ensureRecipeVATColumns(db *sql.DB) error {
+	if err := addColumnIfMissing(db, "recipes", "vat_sales",
+		`ALTER TABLE recipes ADD COLUMN vat_sales REAL`); err != nil {
+		return err
+	}
+	return addColumnIfMissing(db, "recipes", "vat_rate",
+		`ALTER TABLE recipes ADD COLUMN vat_rate REAL`)
+}
+
 func seedDefaults(db *sql.DB) error {
 	var count int
 	if err := seedTaxCountryRows(db); err != nil {
+		return err
+	}
+	if err := seedVATConfigRows(db); err != nil {
 		return err
 	}
 

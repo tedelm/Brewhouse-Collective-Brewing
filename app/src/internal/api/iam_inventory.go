@@ -779,8 +779,8 @@ func (h *Handler) inventoryOrders(w http.ResponseWriter, r *http.Request, actor 
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 				return
 			}
-			if req.Link == nil && req.OrderedQty == nil && req.CostPrice == nil {
-				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "ordered_qty, cost_price, or link required"})
+			if req.Link == nil && req.OrderedQty == nil && req.CostPrice == nil && req.VATRate == nil {
+				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "ordered_qty, cost_price, vat_rate, or link required"})
 				return
 			}
 			var order *service.InventoryOrder
@@ -800,6 +800,13 @@ func (h *Handler) inventoryOrders(w http.ResponseWriter, r *http.Request, actor 
 			}
 			if req.CostPrice != nil {
 				order, err = h.inventory.UpdateOrderLineCostPrice(actor, id, lineID, *req.CostPrice)
+				if err != nil {
+					h.writeErr(w, err)
+					return
+				}
+			}
+			if req.VATRate != nil {
+				order, err = h.inventory.UpdateOrderLineVATRate(actor, id, lineID, *req.VATRate)
 				if err != nil {
 					h.writeErr(w, err)
 					return
