@@ -57,6 +57,7 @@ type User struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 	Role         string `json:"role"`
 	Active       bool   `json:"active"`
 	CreatedAt    string `json:"created_at,omitempty"`
@@ -70,6 +71,7 @@ type UserContact struct {
 	AddressLine2 string
 	Phone        string
 	Instagram    string
+	Untappd      string
 }
 
 // Brewery is a sub-brewery under the shared inventory umbrella.
@@ -80,6 +82,7 @@ type Brewery struct {
 	ContactEmail   string `json:"contact_email"`
 	ContactPhone   string `json:"contact_phone"`
 	Instagram      string `json:"instagram"`
+	Untappd        string `json:"untappd"`
 	CreatedAt      string `json:"created_at,omitempty"`
 	CanManage      bool   `json:"can_manage"`
 	LogoConfigured bool   `json:"logo_configured"`
@@ -233,6 +236,12 @@ type VATConfig struct {
 
 // SetupWizardStatus reports whether the first-run regional/tax wizard is still needed.
 type SetupWizardStatus struct {
+	Needed bool   `json:"needed"`
+	Status string `json:"status"`
+}
+
+// AppTourStatus reports whether the interactive how-to tour is still needed for the actor.
+type AppTourStatus struct {
 	Needed bool   `json:"needed"`
 	Status string `json:"status"`
 }

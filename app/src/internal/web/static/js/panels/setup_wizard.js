@@ -109,9 +109,7 @@
 				'<p class="panel__lead" data-i18n="economy.tax.es_bands_note">Spain uses fixed ABV/°Plato bands (2026). Rates are built into the calculator.</p>';
 		}
 		container.innerHTML = html;
-		if (window.BH_I18N && typeof window.BH_I18N.apply === "function") {
-			window.BH_I18N.apply(container);
-		} else if (window.BH_I18N && typeof window.BH_I18N.applyI18n === "function") {
+		if (window.BH_I18N && typeof window.BH_I18N.applyI18n === "function") {
 			window.BH_I18N.applyI18n(container);
 		}
 	}

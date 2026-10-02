@@ -79,7 +79,7 @@ func TestTaxCountry_NorwaySwitch(t *testing.T) {
 func TestDeleteTank_BlockedWhenBooked(t *testing.T) {
 	_, users, breweries, inventory, settings, recipes, schedule := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Tank Guard Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Tank Guard Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("brewery: %v", err)
 	}

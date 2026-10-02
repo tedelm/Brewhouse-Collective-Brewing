@@ -106,67 +106,67 @@
 						<span class="shell__collapse-icon" aria-hidden="true"></span>
 					</button>
 					<nav class="shell__nav" data-i18n-attr="aria-label:nav.main">
-						<section class="shell__nav-section" data-nav-roles="user,superuser,admin">
+						<section class="shell__nav-section" data-nav-roles="user,superuser,admin" data-tour-section="brewing">
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">sports_bar</span>
 								<span class="shell__nav-label" data-i18n="nav.brewing">Brewing</span>
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/guide" hx-get="/app/guide" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.guide">Brewery 101</span></a>
-								<a class="shell__nav-sublink" href="/app/recipes" hx-get="/app/recipes" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.recipes">Recipes</span> <span class="shell__nav-count shell__nav-count--created" data-recipes-nav-count hidden></span></a>
-								<a class="shell__nav-sublink" href="/app/schedule" hx-get="/app/schedule" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.schedule">Schedule</span> <span class="shell__nav-count shell__nav-count--created" data-schedule-nav-count hidden></span></a>
-								<a class="shell__nav-sublink" href="/app/brewday" hx-get="/app/brewday" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.brewday">Brewday</span> <span class="shell__nav-count shell__nav-count--brewday" data-brewday-nav-count hidden></span></a>
-								<a class="shell__nav-sublink" href="/app/delivery" hx-get="/app/delivery" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.delivery">Delivery</span> <span class="shell__nav-count shell__nav-count--ready_for_delivery" data-delivery-nav-count hidden></span></a>
+								<a class="shell__nav-sublink" href="/app/guide" hx-get="/app/guide" hx-target="#main-content" hx-swap="innerHTML" data-tour="guide"><span data-i18n="nav.guide">Brewery 101</span></a>
+								<a class="shell__nav-sublink" href="/app/recipes" hx-get="/app/recipes" hx-target="#main-content" hx-swap="innerHTML" data-tour="recipes"><span data-i18n="nav.recipes">Recipes</span> <span class="shell__nav-count shell__nav-count--created" data-recipes-nav-count hidden></span></a>
+								<a class="shell__nav-sublink" href="/app/schedule" hx-get="/app/schedule" hx-target="#main-content" hx-swap="innerHTML" data-tour="schedule"><span data-i18n="nav.schedule">Schedule</span> <span class="shell__nav-count shell__nav-count--created" data-schedule-nav-count hidden></span></a>
+								<a class="shell__nav-sublink" href="/app/brewday" hx-get="/app/brewday" hx-target="#main-content" hx-swap="innerHTML" data-tour="brewday"><span data-i18n="nav.brewday">Brewday</span> <span class="shell__nav-count shell__nav-count--brewday" data-brewday-nav-count hidden></span></a>
+								<a class="shell__nav-sublink" href="/app/delivery" hx-get="/app/delivery" hx-target="#main-content" hx-swap="innerHTML" data-tour="delivery"><span data-i18n="nav.delivery">Delivery</span> <span class="shell__nav-count shell__nav-count--ready_for_delivery" data-delivery-nav-count hidden></span></a>
 							</div>
 						</section>
-						<section class="shell__nav-section" data-nav-roles="user,superuser,admin">
+						<section class="shell__nav-section" data-nav-roles="user,superuser,admin" data-tour-section="inventory">
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
 								<span class="shell__nav-label" data-i18n="nav.inventory">Inventory</span>
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/inventory/malt" hx-get="/app/inventory/malt" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.malt">Malt</span></a>
+								<a class="shell__nav-sublink" href="/app/inventory/malt" hx-get="/app/inventory/malt" hx-target="#main-content" hx-swap="innerHTML" data-tour="inventory"><span data-i18n="nav.inventory.malt">Malt</span></a>
 								<a class="shell__nav-sublink" href="/app/inventory/hops" hx-get="/app/inventory/hops" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.hops">Hops</span></a>
 								<a class="shell__nav-sublink" href="/app/inventory/yeast" hx-get="/app/inventory/yeast" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.yeast">Yeast</span></a>
 								<a class="shell__nav-sublink" href="/app/inventory/misc" hx-get="/app/inventory/misc" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.misc">Misc</span></a>
 								<a class="shell__nav-sublink" href="/app/inventory/equipment" hx-get="/app/inventory/equipment" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.equipment">Equipment</span></a>
-								<a class="shell__nav-sublink" href="/app/inventory/orders" hx-get="/app/inventory/orders" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.orders">Orders</span> <span class="shell__nav-count shell__nav-count--planning" data-orders-nav-count hidden></span></a>
+								<a class="shell__nav-sublink" href="/app/inventory/orders" hx-get="/app/inventory/orders" hx-target="#main-content" hx-swap="innerHTML" data-tour="orders"><span data-i18n="nav.inventory.orders">Orders</span> <span class="shell__nav-count shell__nav-count--planning" data-orders-nav-count hidden></span></a>
 							</div>
 						</section>
-						<section class="shell__nav-section" data-nav-roles="user,superuser,admin">
+						<section class="shell__nav-section" data-nav-roles="user,superuser,admin" data-tour-section="hygiene">
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">sanitizer</span>
 								<span class="shell__nav-label" data-i18n="nav.hygiene">Hygiene</span>
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.hygiene.routines">Routines</span> <span class="shell__nav-count shell__nav-count--hygiene" data-hygiene-nav-count hidden></span></a>
+								<a class="shell__nav-sublink" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML" data-tour="hygiene"><span data-i18n="nav.hygiene.routines">Routines</span> <span class="shell__nav-count shell__nav-count--hygiene" data-hygiene-nav-count hidden></span></a>
 							</div>
 						</section>
-						<section class="shell__nav-section" data-nav-roles="user,superuser,admin">
+						<section class="shell__nav-section" data-nav-roles="user,superuser,admin" data-tour-section="tools">
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">build</span>
 								<span class="shell__nav-label" data-i18n="nav.tools">Tools</span>
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/tools/calculators" hx-get="/app/tools/calculators" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.tools.calculators">Calculators</span></a>
+								<a class="shell__nav-sublink" href="/app/tools/calculators" hx-get="/app/tools/calculators" hx-target="#main-content" hx-swap="innerHTML" data-tour="tools"><span data-i18n="nav.tools.calculators">Calculators</span></a>
 							</div>
 						</section>
-						<section class="shell__nav-section" data-nav-economy-section>
+						<section class="shell__nav-section" data-nav-economy-section data-tour-section="economy">
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">payments</span>
 								<span class="shell__nav-label" data-i18n="nav.economy">Economy</span>
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin"><span data-i18n="nav.economy.tax_rates">Alcohol tax rates</span></a>
+								<a class="shell__nav-sublink" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin" data-tour="economy"><span data-i18n="nav.economy.tax_rates">Tax and VAT</span></a>
 								<a class="shell__nav-sublink" href="/app/economy/deliveries" hx-get="/app/economy/deliveries" hx-target="#main-content" hx-swap="innerHTML" data-nav-economy-deliveries><span data-i18n="nav.economy.monthly_deliveries">Monthly deliveries</span></a>
 							</div>
 						</section>
-						<section class="shell__nav-section" data-nav-roles="user,superuser,admin">
+						<section class="shell__nav-section" data-nav-roles="user,superuser,admin" data-tour-section="iam">
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">group</span>
 								<span class="shell__nav-label" data-i18n="nav.iam">IAM</span>
@@ -174,17 +174,17 @@
 							</button>
 							<div class="shell__nav-panel">
 								<a class="shell__nav-sublink" href="/app/iam/users" hx-get="/app/iam/users" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin"><span data-i18n="nav.iam.users">Users</span></a>
-								<a class="shell__nav-sublink" href="/app/iam/breweries" hx-get="/app/iam/breweries" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.iam.breweries">Breweries</span></a>
+								<a class="shell__nav-sublink" href="/app/iam/breweries" hx-get="/app/iam/breweries" hx-target="#main-content" hx-swap="innerHTML" data-tour="iam"><span data-i18n="nav.iam.breweries">Breweries</span></a>
 							</div>
 						</section>
-						<section class="shell__nav-section" data-nav-roles="admin">
+						<section class="shell__nav-section" data-nav-roles="admin" data-tour-section="settings">
 							<button type="button" class="shell__nav-header" aria-expanded="false">
 								<span class="material-symbols-outlined" aria-hidden="true">settings</span>
 								<span class="shell__nav-label" data-i18n="nav.settings">Settings</span>
 								<span class="material-symbols-outlined shell__nav-chevron" aria-hidden="true">expand_more</span>
 							</button>
 							<div class="shell__nav-panel">
-								<a class="shell__nav-sublink" href="/app/settings/brand" hx-get="/app/settings/brand" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.brand">Brand</span></a>
+								<a class="shell__nav-sublink" href="/app/settings/brand" hx-get="/app/settings/brand" hx-target="#main-content" hx-swap="innerHTML" data-tour="settings"><span data-i18n="nav.settings.brand">Brand</span></a>
 								<a class="shell__nav-sublink" href="/app/settings/tanks" hx-get="/app/settings/tanks" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.tanks">Tanks</span></a>
 								<a class="shell__nav-sublink" href="/app/settings/multipliers" hx-get="/app/settings/multipliers" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.multipliers">Multipliers</span></a>
 								<a class="shell__nav-sublink" href="/app/settings/suppliers" hx-get="/app/settings/suppliers" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.suppliers">Suppliers</span></a>
@@ -203,7 +203,7 @@
 							<img class="shell__brand-logo" src="/logo" alt="" width="36" height="36">
 							<span class="shell__topbar-brand-name">Brewhouse</span>
 						</button>
-						<div class="shell__profile-wrap" id="shell-profile-wrap">
+						<div class="shell__profile-wrap" id="shell-profile-wrap" data-tour="admin">
 							<button
 								type="button"
 								class="shell__profile"
@@ -271,6 +271,9 @@
 						<label><span data-i18n="profile.instagram">Instagram</span>
 							<input name="instagram" id="profile-instagram" type="url" placeholder="https://instagram.com/…" data-i18n-attr="placeholder:profile.instagram_placeholder" autocomplete="url">
 						</label>
+						<label><span data-i18n="profile.untappd">Untappd</span>
+							<input name="untappd" id="profile-untappd" type="url" placeholder="https://untappd.com/…" data-i18n-attr="placeholder:profile.untappd_placeholder" autocomplete="url">
+						</label>
 						<label><span data-i18n="profile.new_password">New password</span>
 							<input name="password" id="profile-password" type="password" autocomplete="new-password" minlength="8" placeholder="Leave blank to keep current" data-i18n-attr="placeholder:profile.password_placeholder">
 							<small class="panel__hint" data-i18n="common.password_hint">Min 8 characters, at least one special character</small>
@@ -306,11 +309,11 @@
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/guide" hx-get="/app/guide" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.guide">Brewery 101</span></a>
-							<a class="shell__sheet-link" href="/app/recipes" hx-get="/app/recipes" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.recipes">Recipes</span> <span class="shell__nav-count shell__nav-count--created" data-recipes-nav-count hidden></span></a>
-							<a class="shell__sheet-link" href="/app/schedule" hx-get="/app/schedule" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.schedule">Schedule</span> <span class="shell__nav-count shell__nav-count--created" data-schedule-nav-count hidden></span></a>
-							<a class="shell__sheet-link" href="/app/brewday" hx-get="/app/brewday" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.brewday">Brewday</span> <span class="shell__nav-count shell__nav-count--brewday" data-brewday-nav-count hidden></span></a>
-							<a class="shell__sheet-link" href="/app/delivery" hx-get="/app/delivery" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.delivery">Delivery</span> <span class="shell__nav-count shell__nav-count--ready_for_delivery" data-delivery-nav-count hidden></span></a>
+							<a class="shell__sheet-link" href="/app/guide" hx-get="/app/guide" hx-target="#main-content" hx-swap="innerHTML" data-tour="guide"><span data-i18n="nav.guide">Brewery 101</span></a>
+							<a class="shell__sheet-link" href="/app/recipes" hx-get="/app/recipes" hx-target="#main-content" hx-swap="innerHTML" data-tour="recipes"><span data-i18n="nav.recipes">Recipes</span> <span class="shell__nav-count shell__nav-count--created" data-recipes-nav-count hidden></span></a>
+							<a class="shell__sheet-link" href="/app/schedule" hx-get="/app/schedule" hx-target="#main-content" hx-swap="innerHTML" data-tour="schedule"><span data-i18n="nav.schedule">Schedule</span> <span class="shell__nav-count shell__nav-count--created" data-schedule-nav-count hidden></span></a>
+							<a class="shell__sheet-link" href="/app/brewday" hx-get="/app/brewday" hx-target="#main-content" hx-swap="innerHTML" data-tour="brewday"><span data-i18n="nav.brewday">Brewday</span> <span class="shell__nav-count shell__nav-count--brewday" data-brewday-nav-count hidden></span></a>
+							<a class="shell__sheet-link" href="/app/delivery" hx-get="/app/delivery" hx-target="#main-content" hx-swap="innerHTML" data-tour="delivery"><span data-i18n="nav.delivery">Delivery</span> <span class="shell__nav-count shell__nav-count--ready_for_delivery" data-delivery-nav-count hidden></span></a>
 						</div>
 					</section>
 					<section class="shell__sheet-section" data-nav-roles="user,superuser,admin">
@@ -320,12 +323,12 @@
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/inventory/malt" hx-get="/app/inventory/malt" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.malt">Malt</span></a>
+							<a class="shell__sheet-link" href="/app/inventory/malt" hx-get="/app/inventory/malt" hx-target="#main-content" hx-swap="innerHTML" data-tour="inventory"><span data-i18n="nav.inventory.malt">Malt</span></a>
 							<a class="shell__sheet-link" href="/app/inventory/hops" hx-get="/app/inventory/hops" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.hops">Hops</span></a>
 							<a class="shell__sheet-link" href="/app/inventory/yeast" hx-get="/app/inventory/yeast" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.yeast">Yeast</span></a>
 							<a class="shell__sheet-link" href="/app/inventory/misc" hx-get="/app/inventory/misc" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.misc">Misc</span></a>
 							<a class="shell__sheet-link" href="/app/inventory/equipment" hx-get="/app/inventory/equipment" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.equipment">Equipment</span></a>
-							<a class="shell__sheet-link" href="/app/inventory/orders" hx-get="/app/inventory/orders" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.inventory.orders">Orders</span> <span class="shell__nav-count shell__nav-count--planning" data-orders-nav-count hidden></span></a>
+							<a class="shell__sheet-link" href="/app/inventory/orders" hx-get="/app/inventory/orders" hx-target="#main-content" hx-swap="innerHTML" data-tour="orders"><span data-i18n="nav.inventory.orders">Orders</span> <span class="shell__nav-count shell__nav-count--planning" data-orders-nav-count hidden></span></a>
 						</div>
 					</section>
 					<section class="shell__sheet-section" data-nav-roles="user,superuser,admin">
@@ -335,7 +338,7 @@
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.hygiene.routines">Routines</span> <span class="shell__nav-count shell__nav-count--hygiene" data-hygiene-nav-count hidden></span></a>
+							<a class="shell__sheet-link" href="/app/hygiene" hx-get="/app/hygiene" hx-target="#main-content" hx-swap="innerHTML" data-tour="hygiene"><span data-i18n="nav.hygiene.routines">Routines</span> <span class="shell__nav-count shell__nav-count--hygiene" data-hygiene-nav-count hidden></span></a>
 						</div>
 					</section>
 					<section class="shell__sheet-section" data-nav-roles="user,superuser,admin">
@@ -345,7 +348,7 @@
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/tools/calculators" hx-get="/app/tools/calculators" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.tools.calculators">Calculators</span></a>
+							<a class="shell__sheet-link" href="/app/tools/calculators" hx-get="/app/tools/calculators" hx-target="#main-content" hx-swap="innerHTML" data-tour="tools"><span data-i18n="nav.tools.calculators">Calculators</span></a>
 						</div>
 					</section>
 					<section class="shell__sheet-section" data-nav-economy-section>
@@ -355,7 +358,7 @@
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin"><span data-i18n="nav.economy.tax_rates">Alcohol tax rates</span></a>
+							<a class="shell__sheet-link" href="/app/economy" hx-get="/app/economy" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin" data-tour="economy"><span data-i18n="nav.economy.tax_rates">Tax and VAT</span></a>
 							<a class="shell__sheet-link" href="/app/economy/deliveries" hx-get="/app/economy/deliveries" hx-target="#main-content" hx-swap="innerHTML" data-nav-economy-deliveries><span data-i18n="nav.economy.monthly_deliveries">Monthly deliveries</span></a>
 						</div>
 					</section>
@@ -367,7 +370,7 @@
 						</button>
 						<div class="shell__sheet-panel">
 							<a class="shell__sheet-link" href="/app/iam/users" hx-get="/app/iam/users" hx-target="#main-content" hx-swap="innerHTML" data-nav-roles="admin"><span data-i18n="nav.iam.users">Users</span></a>
-							<a class="shell__sheet-link" href="/app/iam/breweries" hx-get="/app/iam/breweries" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.iam.breweries">Breweries</span></a>
+							<a class="shell__sheet-link" href="/app/iam/breweries" hx-get="/app/iam/breweries" hx-target="#main-content" hx-swap="innerHTML" data-tour="iam"><span data-i18n="nav.iam.breweries">Breweries</span></a>
 						</div>
 					</section>
 					<section class="shell__sheet-section" data-nav-roles="admin">
@@ -377,7 +380,7 @@
 							<span class="material-symbols-outlined shell__sheet-chevron" aria-hidden="true">expand_more</span>
 						</button>
 						<div class="shell__sheet-panel">
-							<a class="shell__sheet-link" href="/app/settings/brand" hx-get="/app/settings/brand" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.brand">Brand</span></a>
+							<a class="shell__sheet-link" href="/app/settings/brand" hx-get="/app/settings/brand" hx-target="#main-content" hx-swap="innerHTML" data-tour="settings"><span data-i18n="nav.settings.brand">Brand</span></a>
 							<a class="shell__sheet-link" href="/app/settings/tanks" hx-get="/app/settings/tanks" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.tanks">Tanks</span></a>
 							<a class="shell__sheet-link" href="/app/settings/multipliers" hx-get="/app/settings/multipliers" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.multipliers">Multipliers</span></a>
 							<a class="shell__sheet-link" href="/app/settings/suppliers" hx-get="/app/settings/suppliers" hx-target="#main-content" hx-swap="innerHTML"><span data-i18n="nav.settings.suppliers">Suppliers</span></a>
@@ -503,6 +506,21 @@
 			</div>
 		</form>
 	</dialog>
+	<div class="app-tour" id="app-tour" hidden>
+		<div class="app-tour__backdrop" id="app-tour-backdrop"></div>
+		<div class="app-tour__spotlight" id="app-tour-spotlight" aria-hidden="true"></div>
+		<div class="app-tour__card" id="app-tour-card" role="dialog" aria-modal="true" data-i18n-attr="aria-label:tour.title">
+			<p class="app-tour__steps" id="app-tour-steps" aria-live="polite"></p>
+			<h2 class="app-tour__title" id="app-tour-title"></h2>
+			<p class="app-tour__body" id="app-tour-body"></p>
+			<div class="app-tour__actions">
+				<button type="button" class="btn" id="app-tour-skip" data-i18n="tour.skip">Skip</button>
+				<button type="button" class="btn" id="app-tour-back" data-i18n="tour.back" hidden>Back</button>
+				<button type="button" class="btn btn--primary" id="app-tour-next" data-i18n="tour.next">Next</button>
+				<button type="button" class="btn btn--primary" id="app-tour-finish" data-i18n="tour.finish" hidden>Finish</button>
+			</div>
+		</div>
+	</div>
 	<script src="/static/js/wasm_exec.js"></script>
 	<script src="/static/js/i18n.js"></script>
 	<script src="/static/js/wasm_loader.js"></script>
@@ -529,6 +547,7 @@
 	<script src="/static/js/panels/settings_hygiene.js"></script>
 	<script src="/static/js/panels/settings_backup.js"></script>
 	<script src="/static/js/panels/setup_wizard.js"></script>
+	<script src="/static/js/panels/app_tour.js"></script>
 	<script src="/static/js/core/panel_registry.js"></script>
 </body>
 </html>

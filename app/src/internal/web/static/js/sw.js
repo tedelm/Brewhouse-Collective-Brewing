@@ -33,6 +33,7 @@ const PRECACHE = [
 	"/static/js/panels/settings_hygiene.js",
 	"/static/js/panels/settings_backup.js",
 	"/static/js/panels/setup_wizard.js",
+	"/static/js/panels/app_tour.js",
 	"/static/wasm/app.wasm",
 	"/static/fonts/material-symbols-outlined.woff2",
 	"/static/manifest.webmanifest",

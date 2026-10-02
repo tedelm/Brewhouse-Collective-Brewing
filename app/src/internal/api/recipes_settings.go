@@ -818,6 +818,19 @@ func (h *Handler) settingsSetupWizard(w http.ResponseWriter, r *http.Request, ac
 		writeJSON(w, http.StatusOK, status)
 		return
 	}
+	if len(parts) == 1 && parts[0] == "reset" {
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
+			return
+		}
+		status, err := h.settings.ResetSetupWizard(actor)
+		if err != nil {
+			h.writeErr(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, status)
+		return
+	}
 	writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "not found"})
 }
 

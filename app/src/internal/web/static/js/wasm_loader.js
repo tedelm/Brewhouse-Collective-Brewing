@@ -502,7 +502,12 @@
 		if (window.BH_I18N && typeof window.BH_I18N.applyI18n === "function") {
 			window.BH_I18N.applyI18n(document);
 		}
-		maybeRunSetupWizard();
+		maybeRunFirstRunGuides();
+	}
+
+	async function maybeRunFirstRunGuides() {
+		await maybeRunSetupWizard();
+		await maybeRunAppTour();
 	}
 
 	async function maybeRunSetupWizard() {
@@ -528,6 +533,16 @@
 			}
 		} catch (err) {
 			console.error("Setup wizard check failed:", err);
+		}
+	}
+
+	async function maybeRunAppTour() {
+		try {
+			if (window.BrewhouseAppTour && typeof window.BrewhouseAppTour.run === "function") {
+				await window.BrewhouseAppTour.run();
+			}
+		} catch (err) {
+			console.error("App tour failed:", err);
 		}
 	}
 
@@ -704,6 +719,7 @@
 			profileForm.address_line2.value = data.address_line2 || "";
 			profileForm.phone.value = data.phone || "";
 			profileForm.instagram.value = data.instagram || "";
+			profileForm.untappd.value = data.untappd || "";
 			profileDialog.showModal();
 		} catch (err) {
 			console.error(err);
@@ -855,6 +871,7 @@
 				address_line2: profileForm.address_line2.value.trim(),
 				phone: profileForm.phone.value.trim(),
 				instagram: profileForm.instagram.value.trim(),
+				untappd: profileForm.untappd.value.trim(),
 			};
 			if (password) {
 				body.password = password;

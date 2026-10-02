@@ -46,6 +46,7 @@ func migrate(db *sql.DB) error {
 			address_line2 TEXT NOT NULL DEFAULT '',
 			phone TEXT NOT NULL DEFAULT '',
 			instagram TEXT NOT NULL DEFAULT '',
+			untappd TEXT NOT NULL DEFAULT '',
 			role TEXT NOT NULL DEFAULT '',
 			active INTEGER NOT NULL DEFAULT 1,
 			created_at TEXT NOT NULL
@@ -57,6 +58,7 @@ func migrate(db *sql.DB) error {
 			contact_email TEXT NOT NULL DEFAULT '',
 			contact_phone TEXT NOT NULL DEFAULT '',
 			instagram TEXT NOT NULL DEFAULT '',
+			untappd TEXT NOT NULL DEFAULT '',
 			created_at TEXT NOT NULL
 		)`,
 		`CREATE TABLE IF NOT EXISTS brewery_members (
@@ -318,6 +320,9 @@ func migrate(db *sql.DB) error {
 	if err := ensureBreweryInstagramColumn(db); err != nil {
 		return fmt.Errorf("ensure breweries.instagram: %w", err)
 	}
+	if err := ensureBreweryUntappdColumn(db); err != nil {
+		return fmt.Errorf("ensure breweries.untappd: %w", err)
+	}
 	if err := ensureDemoColumns(db); err != nil {
 		return fmt.Errorf("ensure demo columns: %w", err)
 	}
@@ -463,6 +468,11 @@ func ensureBreweryInstagramColumn(db *sql.DB) error {
 		`ALTER TABLE breweries ADD COLUMN instagram TEXT NOT NULL DEFAULT ''`)
 }
 
+func ensureBreweryUntappdColumn(db *sql.DB) error {
+	return addColumnIfMissing(db, "breweries", "untappd",
+		`ALTER TABLE breweries ADD COLUMN untappd TEXT NOT NULL DEFAULT ''`)
+}
+
 // ensureDemoColumns adds is_demo markers used by first-run demo brewery seed/purge.
 func ensureDemoColumns(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "breweries", "is_demo",
@@ -514,6 +524,7 @@ func ensureUserProfileColumns(db *sql.DB) error {
 		{"address_line2", `ALTER TABLE users ADD COLUMN address_line2 TEXT NOT NULL DEFAULT ''`},
 		{"phone", `ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''`},
 		{"instagram", `ALTER TABLE users ADD COLUMN instagram TEXT NOT NULL DEFAULT ''`},
+		{"untappd", `ALTER TABLE users ADD COLUMN untappd TEXT NOT NULL DEFAULT ''`},
 	}
 	for _, c := range cols {
 		if err := addColumnIfMissing(db, "users", c.name, c.sql); err != nil {

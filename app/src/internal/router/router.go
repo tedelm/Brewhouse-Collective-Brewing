@@ -28,6 +28,8 @@ func New(webHandler *web.Handler, apiHandler *api.Handler, tokens *auth.TokenIss
 	}
 
 	protect("/api/me", apiHandler.Me)
+	protect("/api/me/app-tour", apiHandler.AppTour)
+	protect("/api/me/app-tour/", apiHandler.AppTour)
 	protect("/api/session/elevate", apiHandler.Elevate)
 	protect("/api/session/refresh", apiHandler.Refresh)
 	protect("/api/users", apiHandler.Users)

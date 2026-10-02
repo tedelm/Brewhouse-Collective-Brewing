@@ -2211,3 +2211,77 @@ input.btn[type="month"]::-webkit-calendar-picker-indicator {
 .setup-wizard__actions #setup-wizard-skip {
 	margin-right: auto;
 }
+
+.app-tour {
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+	pointer-events: none;
+}
+
+.app-tour[hidden] {
+	display: none !important;
+}
+
+.app-tour__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(24, 26, 20, 0.55);
+	pointer-events: auto;
+}
+
+.app-tour__spotlight {
+	position: absolute;
+	border-radius: 0.5rem;
+	box-shadow: 0 0 0 9999px rgba(24, 26, 20, 0.55);
+	outline: 2px solid #f4f5f0;
+	pointer-events: none;
+	z-index: 1;
+	transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+.app-tour__card {
+	position: absolute;
+	z-index: 2;
+	max-width: 22.5rem;
+	padding: 1rem 1.1rem;
+	border-radius: 0.6rem;
+	background: #f4f5f0;
+	color: #2a2c22;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+	pointer-events: auto;
+}
+
+.app-tour__steps {
+	margin: 0 0 0.35rem;
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
+.app-tour__title {
+	margin: 0 0 0.4rem;
+	font-size: 1.1rem;
+	font-weight: 650;
+}
+
+.app-tour__body {
+	margin: 0 0 0.9rem;
+	font-size: 0.95rem;
+	line-height: 1.45;
+}
+
+.app-tour__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.app-tour__actions #app-tour-skip {
+	margin-right: auto;
+}
+
+.app-tour-target {
+	position: relative;
+	z-index: 1201;
+}

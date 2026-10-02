@@ -15,11 +15,11 @@ func TestBrewery_UpdateFields(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	u, admin := ensureAdminUser(t, users)
 
-	created, err := breweries.Create(admin, "Old Name", "Old Contact", "old@ex.com", "111", "https://instagram.com/old", nil)
+	created, err := breweries.Create(admin, "Old Name", "Old Contact", "old@ex.com", "111", "https://instagram.com/old", "", nil)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	updated, err := breweries.Update(admin, created.ID, "New Name", "New Contact", "new@ex.com", "222", "https://instagram.com/new", &u.ID)
+	updated, err := breweries.Update(admin, created.ID, "New Name", "New Contact", "new@ex.com", "222", "https://instagram.com/new", "", &u.ID)
 	if err != nil {
 		t.Fatalf("update: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestBrewery_UpdateFields(t *testing.T) {
 func TestBrewery_DeleteBlockedWhenDelivered(t *testing.T) {
 	_, users, breweries, inventory, settings, recipes, schedule := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Delivered Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Delivered Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestBrewery_DeleteBlockedWhenDelivered(t *testing.T) {
 func TestBrewery_DeleteAllowedWithoutDelivered(t *testing.T) {
 	_, users, breweries, inventory, _, recipes, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Empty Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Empty Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -124,7 +124,7 @@ func testPNG(t *testing.T, w, h int) []byte {
 func TestBrewery_Logo_BreweryAdminCanSetAndClear(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Logo Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Logo Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestBrewery_Logo_BreweryAdminCanSetAndClear(t *testing.T) {
 func TestBrewery_Logo_PlainMemberForbidden(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Member Logo Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Member Logo Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -193,7 +193,7 @@ func TestBrewery_Logo_PlainMemberForbidden(t *testing.T) {
 func TestBrewery_Logo_RejectsOversizedDimensions(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Big Dim Logo Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Big Dim Logo Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestBrewery_Logo_RejectsOversizedDimensions(t *testing.T) {
 func TestBrewery_Logo_RejectsOversizedBytes(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Big Bytes Logo Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Big Bytes Logo Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -223,7 +223,7 @@ func TestBrewery_Logo_RejectsOversizedBytes(t *testing.T) {
 func TestBrewery_Logo_CascadesOnDelete(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
-	brewery, err := breweries.Create(admin, "Cascade Logo Brewery", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Cascade Logo Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -246,7 +246,7 @@ func TestBrewery_Instagram_ValidAndInvalid(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	created, err := breweries.Create(admin, "IG Brewery", "", "", "", "https://www.instagram.com/brewhouse", nil)
+	created, err := breweries.Create(admin, "IG Brewery", "", "", "", "https://www.instagram.com/brewhouse", "", nil)
 	if err != nil {
 		t.Fatalf("create with instagram: %v", err)
 	}
@@ -256,18 +256,48 @@ func TestBrewery_Instagram_ValidAndInvalid(t *testing.T) {
 
 	invalid := []string{"@handle", "instagram.com/x", "ftp://instagram.com/x", "not a url"}
 	for _, ig := range invalid {
-		if _, err := breweries.Update(admin, created.ID, "IG Brewery", "", "", "", ig, nil); err == nil {
+		if _, err := breweries.Update(admin, created.ID, "IG Brewery", "", "", "", ig, "", nil); err == nil {
 			t.Fatalf("expected invalid instagram %q", ig)
 		} else if !strings.Contains(err.Error(), "instagram") {
 			t.Fatalf("expected instagram error for %q, got %v", ig, err)
 		}
 	}
 
-	cleared, err := breweries.Update(admin, created.ID, "IG Brewery", "", "", "", "", nil)
+	cleared, err := breweries.Update(admin, created.ID, "IG Brewery", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("clear instagram: %v", err)
 	}
 	if cleared.Instagram != "" {
 		t.Fatalf("expected empty instagram, got %q", cleared.Instagram)
+	}
+}
+
+func TestBrewery_Untappd_ValidAndInvalid(t *testing.T) {
+	_, users, breweries, _, _, _, _ := testDB(t)
+	_, admin := ensureAdminUser(t, users)
+
+	created, err := breweries.Create(admin, "UT Brewery", "", "", "", "", "https://untappd.com/brewery/brewhouse", nil)
+	if err != nil {
+		t.Fatalf("create with untappd: %v", err)
+	}
+	if created.Untappd != "https://untappd.com/brewery/brewhouse" {
+		t.Fatalf("untappd=%q", created.Untappd)
+	}
+
+	invalid := []string{"@handle", "untappd.com/brewery/x", "ftp://untappd.com/x", "not a url"}
+	for _, u := range invalid {
+		if _, err := breweries.Update(admin, created.ID, "UT Brewery", "", "", "", "", u, nil); err == nil {
+			t.Fatalf("expected invalid untappd %q", u)
+		} else if !strings.Contains(err.Error(), "untappd") {
+			t.Fatalf("expected untappd error for %q, got %v", u, err)
+		}
+	}
+
+	cleared, err := breweries.Update(admin, created.ID, "UT Brewery", "", "", "", "", "", nil)
+	if err != nil {
+		t.Fatalf("clear untappd: %v", err)
+	}
+	if cleared.Untappd != "" {
+		t.Fatalf("expected empty untappd, got %q", cleared.Untappd)
 	}
 }

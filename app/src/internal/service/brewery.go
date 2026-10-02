@@ -33,12 +33,12 @@ func (s *BreweryService) List(actor Actor) ([]Brewery, error) {
 	var err error
 	if actor.IsAdmin() {
 		rows, err = s.db.Query(
-			`SELECT id, name, contact_name, contact_email, contact_phone, instagram, created_at
+			`SELECT id, name, contact_name, contact_email, contact_phone, instagram, untappd, created_at
 			 FROM breweries ORDER BY name`,
 		)
 	} else {
 		rows, err = s.db.Query(
-			`SELECT b.id, b.name, b.contact_name, b.contact_email, b.contact_phone, b.instagram, b.created_at
+			`SELECT b.id, b.name, b.contact_name, b.contact_email, b.contact_phone, b.instagram, b.untappd, b.created_at
 			 FROM breweries b
 			 INNER JOIN brewery_members m ON m.brewery_id = b.id
 			 WHERE m.user_id = ?
@@ -54,7 +54,7 @@ func (s *BreweryService) List(actor Actor) ([]Brewery, error) {
 	var out []Brewery
 	for rows.Next() {
 		var b Brewery
-		if err := rows.Scan(&b.ID, &b.Name, &b.ContactName, &b.ContactEmail, &b.ContactPhone, &b.Instagram, &b.CreatedAt); err != nil {
+		if err := rows.Scan(&b.ID, &b.Name, &b.ContactName, &b.ContactEmail, &b.ContactPhone, &b.Instagram, &b.Untappd, &b.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan brewery: %w", err)
 		}
 		if err := s.enrichBrewery(actor, &b); err != nil {
@@ -72,9 +72,9 @@ func (s *BreweryService) Get(actor Actor, id int64) (*Brewery, error) {
 	}
 	b := &Brewery{}
 	err := s.db.QueryRow(
-		`SELECT id, name, contact_name, contact_email, contact_phone, instagram, created_at FROM breweries WHERE id = ?`,
+		`SELECT id, name, contact_name, contact_email, contact_phone, instagram, untappd, created_at FROM breweries WHERE id = ?`,
 		id,
-	).Scan(&b.ID, &b.Name, &b.ContactName, &b.ContactEmail, &b.ContactPhone, &b.Instagram, &b.CreatedAt)
+	).Scan(&b.ID, &b.Name, &b.ContactName, &b.ContactEmail, &b.ContactPhone, &b.Instagram, &b.Untappd, &b.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -102,7 +102,7 @@ func (s *BreweryService) enrichBrewery(actor Actor, b *Brewery) error {
 }
 
 // Create inserts a brewery. Admin only. Optionally assigns brewery_admin.
-func (s *BreweryService) Create(actor Actor, name, contactName, contactEmail, contactPhone, instagram string, breweryAdminUserID *int64) (*Brewery, error) {
+func (s *BreweryService) Create(actor Actor, name, contactName, contactEmail, contactPhone, instagram, untappd string, breweryAdminUserID *int64) (*Brewery, error) {
 	if !actor.IsAdmin() {
 		return nil, ErrForbidden
 	}
@@ -110,13 +110,17 @@ func (s *BreweryService) Create(actor Actor, name, contactName, contactEmail, co
 		return nil, fmt.Errorf("name required")
 	}
 	instagram = strings.TrimSpace(instagram)
+	untappd = strings.TrimSpace(untappd)
 	if err := validateInstagramURL(instagram); err != nil {
+		return nil, err
+	}
+	if err := validateUntappdURL(untappd); err != nil {
 		return nil, err
 	}
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 	res, err := s.db.Exec(
-		`INSERT INTO breweries (name, contact_name, contact_email, contact_phone, instagram, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-		name, contactName, contactEmail, contactPhone, instagram, createdAt,
+		`INSERT INTO breweries (name, contact_name, contact_email, contact_phone, instagram, untappd, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		name, contactName, contactEmail, contactPhone, instagram, untappd, createdAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("insert brewery: %w", err)
@@ -134,7 +138,7 @@ func (s *BreweryService) Create(actor Actor, name, contactName, contactEmail, co
 }
 
 // Update updates brewery fields. Optionally assigns brewery_admin when breweryAdminUserID > 0.
-func (s *BreweryService) Update(actor Actor, id int64, name, contactName, contactEmail, contactPhone, instagram string, breweryAdminUserID *int64) (*Brewery, error) {
+func (s *BreweryService) Update(actor Actor, id int64, name, contactName, contactEmail, contactPhone, instagram, untappd string, breweryAdminUserID *int64) (*Brewery, error) {
 	ok, err := s.access.CanManageBrewery(actor, id)
 	if err != nil {
 		return nil, err
@@ -146,12 +150,16 @@ func (s *BreweryService) Update(actor Actor, id int64, name, contactName, contac
 		return nil, fmt.Errorf("name required")
 	}
 	instagram = strings.TrimSpace(instagram)
+	untappd = strings.TrimSpace(untappd)
 	if err := validateInstagramURL(instagram); err != nil {
 		return nil, err
 	}
+	if err := validateUntappdURL(untappd); err != nil {
+		return nil, err
+	}
 	_, err = s.db.Exec(
-		`UPDATE breweries SET name = ?, contact_name = ?, contact_email = ?, contact_phone = ?, instagram = ? WHERE id = ?`,
-		name, contactName, contactEmail, contactPhone, instagram, id,
+		`UPDATE breweries SET name = ?, contact_name = ?, contact_email = ?, contact_phone = ?, instagram = ?, untappd = ? WHERE id = ?`,
+		name, contactName, contactEmail, contactPhone, instagram, untappd, id,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("update brewery: %w", err)

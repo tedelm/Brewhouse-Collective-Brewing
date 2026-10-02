@@ -14,6 +14,7 @@ func demoTestStack(t *testing.T) (
 	*service.BreweryService,
 	*service.RecipeService,
 	*service.SettingsService,
+	*service.InventoryService,
 ) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "demo-test.db")
@@ -31,11 +32,11 @@ func demoTestStack(t *testing.T) (
 	recipes := service.NewRecipeService(db, access, inventory, settings)
 	schedule := service.NewScheduleService(db, access)
 	demo := service.NewDemoService(db, breweries, inventory, settings, recipes, schedule)
-	return demo, users, breweries, recipes, settings
+	return demo, users, breweries, recipes, settings, inventory
 }
 
 func TestSeedDemoIfNeeded_CreatesPipelineAndSkipsSecondRun(t *testing.T) {
-	demo, users, breweries, recipes, settings := demoTestStack(t)
+	demo, users, breweries, recipes, settings, _ := demoTestStack(t)
 	admin := ensureAdminActor(t, users)
 
 	seeded, err := demo.SeedDemoIfNeeded(admin)
@@ -132,14 +133,43 @@ func TestSeedDemoIfNeeded_CreatesPipelineAndSkipsSecondRun(t *testing.T) {
 }
 
 func TestPurgeDemo_RemovesDemoAndDoesNotReseed(t *testing.T) {
-	demo, users, breweries, recipes, settings := demoTestStack(t)
+	demo, users, breweries, recipes, settings, inventory := demoTestStack(t)
 	admin := ensureAdminActor(t, users)
+
+	itemQty := func(category, name string) float64 {
+		t.Helper()
+		items, err := inventory.ListByCategory(category)
+		if err != nil {
+			t.Fatalf("list %s: %v", category, err)
+		}
+		for _, it := range items {
+			if it.Name == name {
+				return it.Qty
+			}
+		}
+		t.Fatalf("item %s/%q not found", category, name)
+		return 0
+	}
+
+	maltBefore := itemQty(service.CategoryMalt, "Extra Pale Premium Pilsner Malt")
+	hopsBefore := itemQty(service.CategoryHops, "Cascade")
+	yeastBefore := itemQty(service.CategoryYeast, "Fermentis SafAle US-05")
 
 	if _, err := demo.SeedDemoIfNeeded(admin); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	if err := demo.PurgeDemo(admin); err != nil {
 		t.Fatalf("purge: %v", err)
+	}
+
+	if got := itemQty(service.CategoryMalt, "Extra Pale Premium Pilsner Malt"); got != maltBefore {
+		t.Fatalf("malt qty after purge: want %v, got %v", maltBefore, got)
+	}
+	if got := itemQty(service.CategoryHops, "Cascade"); got != hopsBefore {
+		t.Fatalf("hops qty after purge: want %v, got %v", hopsBefore, got)
+	}
+	if got := itemQty(service.CategoryYeast, "Fermentis SafAle US-05"); got != yeastBefore {
+		t.Fatalf("yeast qty after purge: want %v, got %v", yeastBefore, got)
 	}
 
 	info, err := demo.DemoStatus()
@@ -186,10 +216,10 @@ func TestPurgeDemo_RemovesDemoAndDoesNotReseed(t *testing.T) {
 }
 
 func TestSeedDemoIfNeeded_SkipsWhenBreweryExists(t *testing.T) {
-	demo, users, breweries, _, _ := demoTestStack(t)
+	demo, users, breweries, _, _, _ := demoTestStack(t)
 	admin := ensureAdminActor(t, users)
 
-	if _, err := breweries.Create(admin, "Real Brewery", "", "", "", "", nil); err != nil {
+	if _, err := breweries.Create(admin, "Real Brewery", "", "", "", "", "", nil); err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
 	seeded, err := demo.SeedDemoIfNeeded(admin)

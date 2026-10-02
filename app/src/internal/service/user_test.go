@@ -11,7 +11,7 @@ func TestUser_CreateWithEmailAndBreweryMembership(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	brewery, err := breweries.Create(admin, "Member Brew", "C", "c@t.com", "", "", nil)
+	brewery, err := breweries.Create(admin, "Member Brew", "C", "c@t.com", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("brewery: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestUser_CreateAdminWithoutBrewery(t *testing.T) {
 	_, users, breweries, _, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	brewery, err := breweries.Create(admin, "Other Brew", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Other Brew", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("brewery: %v", err)
 	}
@@ -158,6 +158,34 @@ func TestUser_CreateRejectsInvalidInstagram(t *testing.T) {
 		Instagram: "https://www.instagram.com/brewhouse",
 	}); err != nil {
 		t.Fatalf("valid instagram: %v", err)
+	}
+}
+
+func TestUser_CreateRejectsInvalidUntappd(t *testing.T) {
+	_, users, _, _, _, _, _ := testDB(t)
+	invalid := []string{"@handle", "untappd.com/user/x", "ftp://untappd.com/user/x", "not a url"}
+	for _, u := range invalid {
+		if _, err := users.Create("utuser", "secret1!", "ut@brew.test", service.RoleUser, service.UserContact{Untappd: u}); err == nil {
+			t.Fatalf("expected invalid untappd %q", u)
+		} else if !strings.Contains(err.Error(), "untappd") {
+			t.Fatalf("expected untappd error for %q, got %v", u, err)
+		}
+	}
+	created, err := users.Create("utok", "secret1!", "utok@brew.test", service.RoleUser, service.UserContact{
+		Untappd: "https://untappd.com/user/brewhouse",
+	})
+	if err != nil {
+		t.Fatalf("valid untappd: %v", err)
+	}
+	if created.Untappd != "https://untappd.com/user/brewhouse" {
+		t.Fatalf("untappd=%q", created.Untappd)
+	}
+	cleared, err := users.UpdateProfile(created.ID, "utok@brew.test", "", service.UserContact{Untappd: ""})
+	if err != nil {
+		t.Fatalf("clear untappd: %v", err)
+	}
+	if cleared.Untappd != "" {
+		t.Fatalf("expected empty untappd, got %q", cleared.Untappd)
 	}
 }
 

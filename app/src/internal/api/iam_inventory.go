@@ -49,6 +49,7 @@ func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
 				AddressLine2: req.AddressLine2,
 				Phone:        req.Phone,
 				Instagram:    req.Instagram,
+				Untappd:      req.Untappd,
 			})
 			if err != nil {
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -167,6 +168,7 @@ func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
 			AddressLine2: req.AddressLine2,
 			Phone:        req.Phone,
 			Instagram:    req.Instagram,
+			Untappd:      req.Untappd,
 		})
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -211,7 +213,7 @@ func (h *Handler) Breweries(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 				return
 			}
-			b, err := h.breweries.Create(actor, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.BreweryAdminUserID)
+			b, err := h.breweries.Create(actor, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.Untappd, req.BreweryAdminUserID)
 			if err != nil {
 				h.writeErr(w, err)
 				return
@@ -314,7 +316,7 @@ func (h *Handler) Breweries(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid body"})
 				return
 			}
-			b, err := h.breweries.Update(actor, id, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.BreweryAdminUserID)
+			b, err := h.breweries.Update(actor, id, req.Name, req.ContactName, req.ContactEmail, req.ContactPhone, req.Instagram, req.Untappd, req.BreweryAdminUserID)
 			if err != nil {
 				h.writeErr(w, err)
 				return

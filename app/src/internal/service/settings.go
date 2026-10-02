@@ -10,6 +10,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"strconv"
 	"strings"
 
 	"brewhouse/internal/database"
@@ -606,9 +607,16 @@ func (s *SettingsService) SumPurchaseVATForMonth(actor Actor, month string) (*Pu
 }
 
 const (
-	metaSetupWizard         = "setup_wizard"
+	metaSetupWizard           = "setup_wizard"
 	setupWizardStatusComplete = "complete"
+	setupWizardStatusPending  = "pending"
+	metaAppTourPrefix         = "app_tour:"
+	appTourStatusComplete     = "complete"
 )
+
+func appTourMetaKey(userID int64) string {
+	return metaAppTourPrefix + strconv.FormatInt(userID, 10)
+}
 
 func (s *SettingsService) getMeta(key string) (string, error) {
 	var value string
@@ -691,6 +699,60 @@ func (s *SettingsService) CompleteSetupWizard(actor Actor) (*SetupWizardStatus, 
 		return nil, err
 	}
 	return &SetupWizardStatus{Needed: false, Status: setupWizardStatusComplete}, nil
+}
+
+// ResetSetupWizard marks the regional/tax wizard as pending so it can be retaken.
+func (s *SettingsService) ResetSetupWizard(actor Actor) (*SetupWizardStatus, error) {
+	if !actor.IsAdmin() {
+		isAdmin, err := s.accountIsAdmin(actor.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if !isAdmin {
+			return nil, ErrForbidden
+		}
+	}
+	if err := s.setMeta(metaSetupWizard, setupWizardStatusPending); err != nil {
+		return nil, err
+	}
+	return &SetupWizardStatus{Needed: true, Status: setupWizardStatusPending}, nil
+}
+
+// GetAppTourStatus returns whether the interactive app tour should be shown for the actor.
+func (s *SettingsService) GetAppTourStatus(actor Actor) (*AppTourStatus, error) {
+	if actor.UserID <= 0 {
+		return nil, ErrForbidden
+	}
+	status, err := s.getMeta(appTourMetaKey(actor.UserID))
+	if err != nil {
+		return nil, err
+	}
+	return &AppTourStatus{
+		Status: status,
+		Needed: status != appTourStatusComplete,
+	}, nil
+}
+
+// CompleteAppTour marks the interactive app tour as finished for the actor.
+func (s *SettingsService) CompleteAppTour(actor Actor) (*AppTourStatus, error) {
+	if actor.UserID <= 0 {
+		return nil, ErrForbidden
+	}
+	if err := s.setMeta(appTourMetaKey(actor.UserID), appTourStatusComplete); err != nil {
+		return nil, err
+	}
+	return &AppTourStatus{Needed: false, Status: appTourStatusComplete}, nil
+}
+
+// ResetAppTour clears the tour completion so it can be shown again for the actor.
+func (s *SettingsService) ResetAppTour(actor Actor) (*AppTourStatus, error) {
+	if actor.UserID <= 0 {
+		return nil, ErrForbidden
+	}
+	if err := s.setMeta(appTourMetaKey(actor.UserID), ""); err != nil {
+		return nil, err
+	}
+	return &AppTourStatus{Needed: true, Status: ""}, nil
 }
 
 // GetBeerPriceConfig returns min net SEK/L (defaults to 0 if missing).

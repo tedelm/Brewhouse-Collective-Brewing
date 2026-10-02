@@ -64,6 +64,7 @@ type CreateUserRequest struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 	Role         string `json:"role"`
 	BreweryID    *int64 `json:"brewery_id"`
 }
@@ -79,6 +80,7 @@ type UpdateUserRequest struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 	Role         string `json:"role"`
 }
 
@@ -97,6 +99,7 @@ type UpdateProfileRequest struct {
 	AddressLine2 string `json:"address_line2"`
 	Phone        string `json:"phone"`
 	Instagram    string `json:"instagram"`
+	Untappd      string `json:"untappd"`
 }
 
 // CreateBreweryRequest is the body for brewery create.
@@ -106,6 +109,7 @@ type CreateBreweryRequest struct {
 	ContactEmail       string `json:"contact_email"`
 	ContactPhone       string `json:"contact_phone"`
 	Instagram          string `json:"instagram"`
+	Untappd            string `json:"untappd"`
 	BreweryAdminUserID *int64 `json:"brewery_admin_user_id"`
 }
 

@@ -103,6 +103,13 @@
 								esc(b.instagram) +
 								"</a>"
 							: "";
+						const ut = b.untappd
+							? ' <a href="' +
+								esc(b.untappd) +
+								'" target="_blank" rel="noopener noreferrer">' +
+								esc(b.untappd) +
+								"</a>"
+							: "";
 						return (
 							'<div class="panel__card"><div class="panel__card-head">' +
 							logo +
@@ -117,6 +124,7 @@
 							" " +
 							esc(b.contact_phone || "") +
 							ig +
+							ut +
 							'<div class="panel__card-actions">' +
 							editBtn +
 							delBtn +
@@ -185,6 +193,7 @@
 				form.querySelector('[name="contact_email"]').value = brewery.contact_email || "";
 				form.querySelector('[name="contact_phone"]').value = brewery.contact_phone || "";
 				form.querySelector('[name="instagram"]').value = brewery.instagram || "";
+				form.querySelector('[name="untappd"]').value = brewery.untappd || "";
 				logoConfigured = !!brewery.logo_configured;
 				const admin = (members || []).find((m) => m.role === "brewery_admin");
 				if (admin) {
@@ -510,6 +519,7 @@
 				contact_email: fd.get("contact_email"),
 				contact_phone: fd.get("contact_phone"),
 				instagram: fd.get("instagram"),
+				untappd: fd.get("untappd"),
 			};
 			if (isAdmin && adminID) {
 				body.brewery_admin_user_id = parseInt(adminID, 10);

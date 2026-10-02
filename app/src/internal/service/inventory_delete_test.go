@@ -29,7 +29,7 @@ func TestInventoryDelete_NonAdminForbidden(t *testing.T) {
 	_, users, breweries, inventory, _, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	brewery, err := breweries.Create(admin, "SU Brew", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "SU Brew", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestInventoryDelete_InUseOnRecipe(t *testing.T) {
 	_, users, breweries, inventory, _, recipes, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
-	brewery, err := breweries.Create(admin, "Recipe Brew", "", "", "", "", nil)
+	brewery, err := breweries.Create(admin, "Recipe Brew", "", "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("create brewery: %v", err)
 	}
