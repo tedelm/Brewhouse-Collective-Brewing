@@ -125,8 +125,8 @@
   "dialog.save": "Zapisz",
   "dialog.info": "Info",
   "dialog.input": "Wprowadź",
-  "shell.welcome.title": "Od receptury do pubu",
-  "shell.welcome.text": "Wybierz sekcję w nawigacji albo zacznij od przewodnika po procesie warzenia.",
+  "shell.welcome.title": "Od receptury do pubu — jeden system dla browarów, które dzielą tanki, magazyn i pracę.",
+  "shell.welcome.text": "Stworzony do wspólnego warzenia: kilka zespołów, wspólny magazyn i sprzęt fermentacyjny oraz jasny pipeline, by każda warka wiedziała, co dalej. Zaplanuj recepturę, zarezerwuj tank, zapisz dzień warzenia i higienę, wycień i dostarcz — bez arkuszy goniących prawdę.",
   "shell.welcome.cta": "Browar 101",
   "shell.welcome.install": "Zainstaluj aplikację",
   "shell.welcome.admin_tip": "Konta administratora: otwórz menu profilu i włącz <strong>Tryb administratora</strong>, aby uzyskać dostęp do Ekonomii, IAM i Ustawień.",
@@ -860,5 +860,6 @@
   "js.economy.purchases.help.line_cost": "Cena jednostkowa × ilość.",
   "js.economy.purchases.help.vat_rate": "Stawka VAT zakupowego w % na linii.",
   "js.economy.purchases.help.vat": "Kwota VAT zakupowego dla linii.",
-  "js.economy.purchases.help.status": "Status zamówienia (zamówione lub zakończone)."
+  "js.economy.purchases.help.status": "Status zamówienia (zamówione lub zakończone).",
+  "shell.welcome.pitch": "Śledź składniki z rzeczywistymi kosztami i zamówieniami zakupu. Zobacz podatek alkoholowy, VAT sprzedaży, miesięczne dostawy i koszty zakupów, gdy czas na fakturę lub deklarację. Prowadzona pierwsza konfiguracja i wycieczka, Browar 101 w aplikacji, instalacja PWA i dziewięć języków."
 }

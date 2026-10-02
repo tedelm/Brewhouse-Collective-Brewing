@@ -126,8 +126,8 @@
   "dialog.save": "Save",
   "dialog.info": "Info",
   "dialog.input": "Input",
-  "shell.welcome.title": "From recipe to the pub",
-  "shell.welcome.text": "Pick a section in the navigation, or start with the batch pipeline guide.",
+  "shell.welcome.title": "From recipe to the pub — one system for breweries that share tanks, stock, and the work.",
+  "shell.welcome.text": "Built for collective brewing: several brewery teams, one shared inventory and fermentation equipment, and a clear pipeline so every batch knows what happens next. Plan the recipe, book a tank, record brewday and hygiene, then price and deliver — without spreadsheets chasing the truth.",
   "shell.welcome.cta": "Brewery 101",
   "shell.welcome.install": "Install app",
   "shell.welcome.admin_tip": "Admin accounts: open your profile menu and turn on <strong>Admin mode</strong> for Economy, IAM, and Settings.",
@@ -860,5 +860,6 @@
   "settings.regional.retake_setup": "Retake setup wizard",
   "common.untappd": "Untappd",
   "profile.untappd": "Untappd",
-  "profile.untappd_placeholder": "https://untappd.com/…"
+  "profile.untappd_placeholder": "https://untappd.com/…",
+  "shell.welcome.pitch": "Track ingredients with real costs and purchase orders. See alcohol tax, sales VAT, monthly deliveries, and purchase costs when it is time to invoice or declare. Guided first-run setup and tour, Brewery 101 in the app, PWA install, and nine languages."
 }

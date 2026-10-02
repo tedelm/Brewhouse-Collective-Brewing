@@ -125,8 +125,8 @@
   "dialog.save": "Spara",
   "dialog.info": "Info",
   "dialog.input": "Indata",
-  "shell.welcome.title": "Från recept till puben",
-  "shell.welcome.text": "Välj ett avsnitt i navigeringen, eller börja med guiden för batchpipelinen.",
+  "shell.welcome.title": "Från recept till puben — ett system för bryggerier som delar tankar, lager och arbetet.",
+  "shell.welcome.text": "Byggt för kollektiv bryggning: flera bryggeriteam, ett delat lager och jäsutrustning, och en tydlig pipeline så varje batch vet vad som händer härnäst. Planera receptet, boka tank, registrera bryggdag och hygien, prissätt och leverera — utan kalkylblad som jagar sanningen.",
   "shell.welcome.cta": "Bryggeri 101",
   "shell.welcome.install": "Installera appen",
   "shell.welcome.admin_tip": "Admin-konton: öppna profilmenyn och slå på <strong>Adminläge</strong> för Ekonomi, IAM och Inställningar.",
@@ -860,5 +860,6 @@
   "js.economy.purchases.help.line_cost": "Enhetspris × antal.",
   "js.economy.purchases.help.vat_rate": "Inköpsmomssats i procent på raden.",
   "js.economy.purchases.help.vat": "Inköpsmomsbelopp för raden.",
-  "js.economy.purchases.help.status": "Orderstatus (beställd eller slutförd)."
+  "js.economy.purchases.help.status": "Orderstatus (beställd eller slutförd).",
+  "shell.welcome.pitch": "Följ ingredienser med verkliga kostnader och inköpsordrar. Se alkoholskatt, försäljningsmoms, månadsleveranser och inköpskostnader när det är dags att fakturera eller deklarera. Guidad första körning och rundtur, Bryggeri 101 i appen, PWA-installation och nio språk."
 }

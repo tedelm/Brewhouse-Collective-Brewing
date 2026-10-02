@@ -125,8 +125,8 @@
   "dialog.save": "Guardar",
   "dialog.info": "Info",
   "dialog.input": "Entrada",
-  "shell.welcome.title": "De la receta al pub",
-  "shell.welcome.text": "Elige una sección en la navegación o empieza por la guía del flujo de lotes.",
+  "shell.welcome.title": "De la receta al pub — un sistema para cervecerías que comparten tanques, stock y el trabajo.",
+  "shell.welcome.text": "Hecho para la elaboración colectiva: varios equipos, un inventario y fermentadores compartidos, y un flujo claro para que cada lote sepa qué sigue. Planifica la receta, reserva el tanque, registra el día de cocción y la higiene, fija precio y entrega — sin hojas de cálculo persiguiendo la verdad.",
   "shell.welcome.cta": "Cervecería 101",
   "shell.welcome.install": "Instalar la app",
   "shell.welcome.admin_tip": "Cuentas de administrador: abre el menú de perfil y activa el <strong>Modo administrador</strong> para Economía, IAM y Ajustes.",
@@ -860,5 +860,6 @@
   "js.economy.purchases.help.line_cost": "Coste unitario × cantidad.",
   "js.economy.purchases.help.vat_rate": "Porcentaje de IVA de compra de la línea.",
   "js.economy.purchases.help.vat": "Importe de IVA de compra de la línea.",
-  "js.economy.purchases.help.status": "Estado del pedido (pedido o completado)."
+  "js.economy.purchases.help.status": "Estado del pedido (pedido o completado).",
+  "shell.welcome.pitch": "Sigue ingredientes con costes reales y pedidos de compra. Ve impuesto sobre el alcohol, IVA de venta, entregas mensuales y costes de compra cuando toque facturar o declarar. Configuración guiada y tour, Cervecería 101 en la app, instalación PWA y nueve idiomas."
 }

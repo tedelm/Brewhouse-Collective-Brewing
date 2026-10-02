@@ -1,6 +1,12 @@
 # Brewhouse - Collective Brewing: A Brewery Management System
 
-Collective brewing is a brewery managment system for breweries that share inventory and brewery equipment.
+**From recipe to the pub — one system for breweries that share tanks, stock, and the work.**
+
+Brewhouse is built for collective brewing: several brewery teams, one shared inventory and fermentation equipment, and a clear pipeline so every batch knows what happens next. Plan the recipe, book a tank, record brewday and hygiene, then price and deliver — without spreadsheets chasing the truth.
+
+Track malt, hops, and yeast with real costs and purchase orders. See alcohol tax, sales VAT, monthly deliveries, and purchase costs when it is time to invoice or declare. Admins elevate when needed; brewery managers get the reports they need day to day.
+
+First run walks you through regional defaults, tax, and VAT, then an optional guided tour. Brewery 101 stays in the app. Install as a PWA, work in nine languages, and keep the shell snappy while your data stays online.
 
 ![Brewhouse Logo](doc/img/logo.png)
 
@@ -25,74 +31,85 @@ Collective brewing is a brewery managment system for breweries that share invent
 
 ### First run
 
-Login shows one-time admin credentials until the first successful sign-in:
+Up in minutes: save the one-time admin password before it disappears, then set currency, language, tax jurisdiction, and VAT so every later calculation is already in the right market.
 
 ![First run login](doc/img/first_run.png)
 
-Welcome setup wizard (regional defaults, tax jurisdiction, VAT):
+Welcome setup keeps regional defaults, alcohol tax, and VAT out of guesswork — finish the wizard and the house is ready to brew.
 
 ![Welcome setup](doc/img/first_run_welcome.png)
 
-Interactive app tour (spotlight on Brewing → Recipes):
+An interactive tour spotlights the real work: start at Recipes, then follow the pipeline with confidence.
 
 ![App tour](doc/img/first_run_welcome_tour.png)
 
 ### Login
 
+Sign in once credentials are saved — installable as an app on HTTPS or localhost when you are ready.
+
 ![Login](doc/img/login.png)
 
 ### Main shell
 
-Home card with Brewery 101 and Admin mode note:
+Home is the launch pad: open Brewery 101 for the full walkthrough, or jump straight into the nav. Admins turn on Admin mode for Economy, IAM, and Settings.
 
 ![Main shell](doc/img/main.png)
 
 ### Brewing — Recipes
 
-Batch pipeline statuses, ingredient checkout, and next-step actions:
+Every batch shows status and the next action. Available stock checks out; shortfalls land on a planning order so nothing is forgotten between kettle and warehouse.
 
 ![Recipes](doc/img/brewing_recipes.png)
 
 ### Brewing — Schedule
 
-Brew-day booking, week view, and tank occupancy Gantt:
+Book a brew day and fermentation tank in one step. Week view and Gantt occupancy make shared equipment conflicts obvious before they happen.
 
 ![Schedule](doc/img/brewing_schedule.png)
 
 ### Brewing — Brewday
 
-Record OG and brew volume; hygiene shortcuts and revoke:
+Record OG and brew volume to close the brew day, then push hygiene when cleaning is done — with edit and revoke when reality changes.
 
 ![Brewday](doc/img/brewing_brewday.png)
 
 ### Brewing — Delivery
 
-FG, volume, beer net and multiplier with live estimate, then deliver to the pub:
+Set FG, volume, beer net, and multiplier; live estimate shows ABV, alcohol tax, sales VAT, net, and estimated profit before you deliver to the pub.
 
 ![Delivery](doc/img/brewing_delivery.png)
 
 ### Inventory
 
+Shared catalog across breweries — malt, hops, yeast, and more — with cost price and supplier adjustments so recipe and order costs stay honest.
+
 ![Inventory](doc/img/inventory.png)
 
 ### Tools — Calculators
 
-ABV, alcohol tax, extract, dilution, yeast pitch, and CO₂ carbonation:
+Quick helpers for ABV, alcohol tax, extract, dilution, yeast pitch, and CO₂ carbonation — answers update as you type, no spreadsheet detour.
 
 ![Tools calculators](doc/img/tools.png)
 
 ### Economy
 
-Tax and VAT for the active jurisdiction; sidebar also includes Monthly deliveries and Purchase costs:
+Configure beer excise and VAT for the active jurisdiction, with examples that match how delivery pricing works on the floor.
 
-![Economy](doc/img/economy.png)
-![Economy](doc/img/economy_purchase.png)
+![Economy tax and VAT](doc/img/economy.png)
+
+Month view of purchase-order costs and purchase VAT — kept separate from monthly deliveries so buy-side and sell-side stay clear.
+
+![Economy purchase costs](doc/img/economy_purchase.png)
 
 ### IAM
+
+Users, breweries, and memberships in one place — roles for day-to-day brewing, brewery managers, and elevated admin when you need the keys.
 
 ![IAM](doc/img/iam.png)
 
 ### Settings
+
+Brand, tanks, multipliers, suppliers, beer net price, regional defaults, hygiene routines, and backups — the knobs that keep the collective running.
 
 ![Settings](doc/img/settings.png)
 

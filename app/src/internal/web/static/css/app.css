@@ -843,7 +843,7 @@ body {
 }
 
 .shell__welcome {
-	max-width: 28rem;
+	max-width: 36rem;
 	margin: 1.5rem auto;
 	padding: 2.25rem 1.75rem 2rem;
 	border-radius: 1rem;
@@ -897,15 +897,21 @@ body {
 	margin: 0 0 0.55rem;
 	font-size: 1.15rem;
 	font-weight: 600;
+	line-height: 1.35;
 	color: #3d4132;
 	animation: welcome-fade-up 0.55s ease 0.14s both;
 }
 
 .shell__welcome-text {
-	margin: 0 0 1.35rem;
+	margin: 0 0 0.85rem;
 	color: rgba(42, 44, 34, 0.75);
 	line-height: 1.5;
 	animation: welcome-fade-up 0.55s ease 0.2s both;
+}
+
+.shell__welcome-pitch {
+	margin-bottom: 1.35rem;
+	animation-delay: 0.22s;
 }
 
 .shell__welcome-actions {

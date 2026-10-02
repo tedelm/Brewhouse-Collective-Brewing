@@ -2,11 +2,15 @@ package service
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"time"
 
 	"brewhouse/internal/database"
 )
+
+//go:embed demo_logo.png
+var demoBreweryLogoPNG []byte
 
 const (
 	metaDemoStatus     = "demo_status"
@@ -197,6 +201,9 @@ func (s *DemoService) seedDemo(actor Actor) error {
 	}
 	if _, err := s.db.Exec(`UPDATE breweries SET is_demo = 1 WHERE id = ?`, brewery.ID); err != nil {
 		return fmt.Errorf("mark demo brewery: %w", err)
+	}
+	if err := s.breweries.SetLogo(actor, brewery.ID, "image/png", demoBreweryLogoPNG); err != nil {
+		return fmt.Errorf("set demo brewery logo: %w", err)
 	}
 
 	tank1, err := s.settings.CreateTank(actor, demoTank1Name, 1000)

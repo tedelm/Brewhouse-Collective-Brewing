@@ -62,6 +62,10 @@ func TestSeedDemoIfNeeded_CreatesPipelineAndSkipsSecondRun(t *testing.T) {
 	if len(list) != 1 || list[0].Name != "Demo Brewery" {
 		t.Fatalf("expected Demo Brewery, got %+v", list)
 	}
+	logoOK, err := breweries.LogoConfigured(list[0].ID)
+	if err != nil || !logoOK {
+		t.Fatalf("expected demo brewery logo, ok=%v err=%v", logoOK, err)
+	}
 
 	batches, err := recipes.List(admin, list[0].ID, true)
 	if err != nil {

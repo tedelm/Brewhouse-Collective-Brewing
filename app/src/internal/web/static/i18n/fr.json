@@ -125,8 +125,8 @@
   "dialog.save": "Enregistrer",
   "dialog.info": "Info",
   "dialog.input": "Saisie",
-  "shell.welcome.title": "De la recette au pub",
-  "shell.welcome.text": "Choisissez une section dans la navigation, ou commencez par le guide du pipeline de lots.",
+  "shell.welcome.title": "De la recette au pub — un système pour les brasseries qui partagent cuves, stock et le travail.",
+  "shell.welcome.text": "Conçu pour le brassage collectif : plusieurs équipes, un inventaire et un équipement de fermentation partagés, et un pipeline clair pour que chaque lot sache la suite. Planifiez la recette, réservez une cuve, enregistrez le jour de brassage et l’hygiène, tariftez et livrez — sans tableurs à la chasse de la vérité.",
   "shell.welcome.cta": "Brasserie 101",
   "shell.welcome.install": "Installer l’application",
   "shell.welcome.admin_tip": "Comptes admin : ouvrez le menu profil et activez le <strong>Mode admin</strong> pour Économie, IAM et Paramètres.",
@@ -860,5 +860,6 @@
   "js.economy.purchases.help.line_cost": "Prix unitaire × quantité.",
   "js.economy.purchases.help.vat_rate": "Taux de TVA d’achat en % de la ligne.",
   "js.economy.purchases.help.vat": "Montant de TVA d’achat de la ligne.",
-  "js.economy.purchases.help.status": "Statut de la commande (commandée ou terminée)."
+  "js.economy.purchases.help.status": "Statut de la commande (commandée ou terminée).",
+  "shell.welcome.pitch": "Suivez les ingrédients avec des coûts réels et des commandes d’achat. Voyez la taxe alcool, la TVA de vente, les livraisons mensuelles et les coûts d’achat au moment de facturer ou de déclarer. Première configuration guidée et visite, Brasserie 101 dans l’app, installation PWA et neuf langues."
 }
