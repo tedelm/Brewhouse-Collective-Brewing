@@ -1,5 +1,7 @@
 package service
 
+import "encoding/json"
+
 // Role constants for global and brewery membership roles.
 const (
 	RoleAdmin        = "admin"
@@ -189,11 +191,33 @@ type AlcoholTaxTier struct {
 	SEKPerLiter float64 `json:"sek_per_liter"`
 }
 
-// AlcoholTaxConfig is Swedish beer tax: SEK/L = 0 if ABV <= FreeMaxABV, else ABV × RateSEK × Discount.
+// AlcoholTaxConfig is the active country's beer excise profile (JSON params + discount key).
 type AlcoholTaxConfig struct {
-	RateSEK    float64 `json:"rate_sek"`
-	FreeMaxABV float64 `json:"free_max_abv"`
-	Discount   float64 `json:"discount"`
+	Country         string             `json:"country"`
+	Basis           string             `json:"basis"`
+	Params          json.RawMessage    `json:"params"`
+	DiscountKey     string             `json:"discount_key"`
+	DiscountOptions []TaxDiscountOption `json:"discount_options"`
+	// Legacy Swedish fields kept for older clients (populated when country=sv).
+	RateSEK    float64 `json:"rate_sek,omitempty"`
+	FreeMaxABV float64 `json:"free_max_abv,omitempty"`
+	Discount   float64 `json:"discount,omitempty"`
+}
+
+// TaxDiscountOption is a selectable small-producer band.
+type TaxDiscountOption struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+}
+
+// TaxPreview is a live tax estimate for delivery/tools UI.
+type TaxPreview struct {
+	Country  string  `json:"country"`
+	Basis    string  `json:"basis"`
+	ABV      float64 `json:"abv"`
+	Plato    float64 `json:"plato"`
+	PerLiter float64 `json:"per_liter"`
+	Total    float64 `json:"total"`
 }
 
 // BeerPriceConfig holds the minimum net sale price per liter (SEK).
@@ -211,10 +235,11 @@ type BrandColorConfig struct {
 	LogoBgHex string `json:"logo_bg_hex"`
 }
 
-// RegionalConfig holds display currency and UI language.
+// RegionalConfig holds display currency, UI language, and tax jurisdiction.
 type RegionalConfig struct {
 	CurrencyCode string `json:"currency_code"`
 	Language     string `json:"language"`
+	TaxCountry   string `json:"tax_country"`
 }
 
 // PriceMultiplier scales (cost+tax) to net price.

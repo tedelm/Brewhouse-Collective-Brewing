@@ -54,7 +54,7 @@
 		const previewProfit = panel.querySelector("#delivery-preview-profit");
 		const previewPerL = panel.querySelector("#delivery-preview-per-l");
 		let byID = {};
-		let taxCfg = { rate_sek: 2.28, free_max_abv: 2.8, discount: 1.0 };
+		let taxPreviewTimer = null;
 		let previewOG = null;
 		let previewCostTotal = 0;
 
@@ -100,18 +100,33 @@
 				return;
 			}
 			const abv = (og - fg) * 131.25;
-			const taxPerL =
-				abv <= taxCfg.free_max_abv ? 0 : abv * taxCfg.rate_sek * taxCfg.discount;
-			const tax = vol * taxPerL;
 			const cost = previewCostTotal;
 			const perL = beerNet * mult;
 			const net = perL * vol;
 			previewABV.textContent = abv.toFixed(1) + " %";
 			previewCost.textContent = fmtMoney(cost);
-			previewTax.textContent = fmtMoney(tax);
 			previewNet.textContent = fmtMoney(net);
 			previewProfit.textContent = fmtMoney(net - cost);
 			previewPerL.textContent = fmtMoney(perL);
+			previewTax.textContent = "…";
+			if (taxPreviewTimer) {
+				clearTimeout(taxPreviewTimer);
+			}
+			taxPreviewTimer = setTimeout(async () => {
+				try {
+					const preview = await api(
+						"/api/settings/tax-preview?abv=" +
+							encodeURIComponent(abv) +
+							"&og=" +
+							encodeURIComponent(og) +
+							"&volume=" +
+							encodeURIComponent(vol)
+					);
+					previewTax.textContent = fmtMoney(preview.total);
+				} catch (e) {
+					previewTax.textContent = "—";
+				}
+			}, 150);
 		}
 
 		async function loadRecipePreview(id) {
@@ -139,12 +154,10 @@
 		}
 
 		async function loadPricingControls() {
-			const [mults, beer, tax] = await Promise.all([
+			const [mults, beer] = await Promise.all([
 				api("/api/settings/multipliers?active=1"),
 				api("/api/settings/beer-price"),
-				api("/api/settings/tax-config"),
 			]);
-			taxCfg = tax || taxCfg;
 			const listMults = mults || [];
 			multSel.innerHTML = listMults
 				.map((m) => {

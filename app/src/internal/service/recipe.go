@@ -894,11 +894,11 @@ func (s *RecipeService) SetDelivery(actor Actor, id int64, fg, deliveryVolume, b
 	}
 
 	abv := ABVFromSG(*recipe.OG, fg)
-	sekPerLiter, err := s.settings.TaxForABV(abv)
+	perLiter, err := s.settings.TaxForDelivery(abv, *recipe.OG, deliveryVolume)
 	if err != nil {
 		return nil, err
 	}
-	tax := deliveryVolume * sekPerLiter
+	tax := deliveryVolume * perLiter
 
 	ings, err := s.loadIngredients(id)
 	if err != nil {

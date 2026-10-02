@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"encoding/json"
 	"errors"
 	"math"
 	"testing"
@@ -8,7 +9,7 @@ import (
 	"brewhouse/internal/service"
 )
 
-func TestTaxForABV_SwedishBeerFormula(t *testing.T) {
+func TestTaxForDelivery_SwedishBeerFormula(t *testing.T) {
 	_, users, _, _, settings, _, _ := testDB(t)
 	_, admin := ensureAdminUser(t, users)
 
@@ -16,35 +17,35 @@ func TestTaxForABV_SwedishBeerFormula(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get config: %v", err)
 	}
-	if cfg.RateSEK != 2.28 || cfg.FreeMaxABV != 2.8 || cfg.Discount != 1.0 {
+	if cfg.Country != "sv" || cfg.RateSEK != 2.28 || cfg.FreeMaxABV != 2.8 {
 		t.Fatalf("unexpected defaults: %+v", cfg)
 	}
 
-	sek, err := settings.TaxForABV(2.8)
+	perL, err := settings.TaxForDelivery(2.8, 1.048, 1)
 	if err != nil {
 		t.Fatalf("tax 2.8: %v", err)
 	}
-	if sek != 0 {
-		t.Fatalf("expected 0 at 2.8%%, got %v", sek)
+	if perL != 0 {
+		t.Fatalf("expected 0 at 2.8%%, got %v", perL)
 	}
 
-	sek, err = settings.TaxForABV(5.0)
+	perL, err = settings.TaxForDelivery(5.0, 1.048, 1)
 	if err != nil {
 		t.Fatalf("tax 5.0: %v", err)
 	}
-	if math.Abs(sek-11.40) > 1e-9 {
-		t.Fatalf("expected 11.40 at 5%% full rate, got %v", sek)
+	if math.Abs(perL-11.40) > 1e-9 {
+		t.Fatalf("expected 11.40 at 5%% full rate, got %v", perL)
 	}
 
-	if _, err := settings.UpdateAlcoholTaxConfig(admin, 2.28, 2.8, 0.5); err != nil {
+	if _, err := settings.UpdateAlcoholTaxConfigLegacy(admin, 2.28, 2.8, 0.5); err != nil {
 		t.Fatalf("update discount: %v", err)
 	}
-	sek, err = settings.TaxForABV(5.0)
+	perL, err = settings.TaxForDelivery(5.0, 1.048, 1)
 	if err != nil {
 		t.Fatalf("tax 5.0 discounted: %v", err)
 	}
-	if math.Abs(sek-5.70) > 1e-9 {
-		t.Fatalf("expected 5.70 at 5%% with 50%% discount, got %v", sek)
+	if math.Abs(perL-5.70) > 1e-9 {
+		t.Fatalf("expected 5.70 at 5%% with 50%% discount, got %v", perL)
 	}
 }
 
@@ -52,9 +53,26 @@ func TestUpdateAlcoholTaxConfig_ForbiddenForSuperuser(t *testing.T) {
 	_, users, _, _, settings, _, _ := testDB(t)
 	_ = ensureAdminActor(t, users)
 	su := service.Actor{UserID: 1, Role: service.RoleSuperuser}
-	_, err := settings.UpdateAlcoholTaxConfig(su, 2.28, 2.8, 1.0)
+	params, _ := json.Marshal(map[string]float64{"rate": 2.28, "free_max_abv": 2.8})
+	_, err := settings.UpdateAlcoholTaxConfig(su, params, "full")
 	if !errors.Is(err, service.ErrForbidden) {
 		t.Fatalf("expected ErrForbidden, got %v", err)
+	}
+}
+
+func TestTaxCountry_NorwaySwitch(t *testing.T) {
+	_, users, _, _, settings, _, _ := testDB(t)
+	_, admin := ensureAdminUser(t, users)
+
+	if _, err := settings.UpdateRegionalConfig(admin, "NOK", "nb", "nb"); err != nil {
+		t.Fatalf("regional: %v", err)
+	}
+	preview, err := settings.TaxPreview(5.0, 1.048, 1)
+	if err != nil {
+		t.Fatalf("preview: %v", err)
+	}
+	if math.Abs(preview.PerLiter-27.05) > 1e-6 {
+		t.Fatalf("expected 27.05 NOK/l, got %v", preview.PerLiter)
 	}
 }
 

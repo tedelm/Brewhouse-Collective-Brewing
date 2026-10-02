@@ -75,7 +75,7 @@
 			return minC + "–" + maxC + " °C";
 		}
 
-		let taxCfg = { rate_sek: 2.28, free_max_abv: 2.8, discount: 1.0 };
+		let taxPreviewTimer = null;
 		const taxCfgEl = panel.querySelector("#calc-tax-config");
 		const yeastSelect = panel.querySelector("#calc-pitch-yeast");
 
@@ -106,11 +106,29 @@
 				return;
 			}
 			const abv = abvFromSG(og, fg);
-			const perL =
-				abv <= taxCfg.free_max_abv ? 0 : abv * taxCfg.rate_sek * taxCfg.discount;
 			abvEl.textContent = abv.toFixed(1) + " %";
-			perEl.textContent = fmtMoney(perL);
-			totEl.textContent = fmtMoney(vol * perL);
+			perEl.textContent = "…";
+			totEl.textContent = "…";
+			if (taxPreviewTimer) {
+				clearTimeout(taxPreviewTimer);
+			}
+			taxPreviewTimer = setTimeout(async () => {
+				try {
+					const preview = await api(
+						"/api/settings/tax-preview?abv=" +
+							encodeURIComponent(abv) +
+							"&og=" +
+							encodeURIComponent(og) +
+							"&volume=" +
+							encodeURIComponent(vol)
+					);
+					perEl.textContent = fmtMoney(preview.per_liter);
+					totEl.textContent = fmtMoney(preview.total);
+				} catch (e) {
+					perEl.textContent = "—";
+					totEl.textContent = "—";
+				}
+			}, 150);
 		}
 
 		function updateExtract() {
@@ -386,15 +404,13 @@
 		});
 
 		try {
-			taxCfg = (await api("/api/settings/tax-config")) || taxCfg;
+			const taxCfg = await api("/api/settings/tax-config");
 			if (taxCfgEl) {
-				taxCfgEl.textContent =
-					t("js.tools.tax_config", {
-						rate: taxCfg.rate_sek,
-						currency: currencyCode(),
-						free: taxCfg.free_max_abv,
-						discount: Math.round(taxCfg.discount * 100),
-					});
+				taxCfgEl.textContent = t("js.tools.tax_config_country", {
+					country: taxCfg.country || "sv",
+					basis: taxCfg.basis || "",
+					discount: taxCfg.discount_key || "full",
+				});
 			}
 		} catch (e) {
 			if (taxCfgEl) {
